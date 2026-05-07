@@ -16,6 +16,7 @@ interface VaultItem {
   dna_vector: string | number[]; 
   category?: string;
   base_color?: string;
+  item_finish?: string;
   primary_pillar?: string;
   standardized_aesthetic_tags?: string[];
   similarity?: number;
@@ -26,6 +27,12 @@ interface VaultProps {
 }
 
 type VaultTab = "recommendations" | "vision" | "batch";
+type SortOrder = "recommended" | "price_asc" | "price_desc";
+
+const CATEGORIES = [
+  "all", "co-ords", "suits", "shirt", "pant", "shorts", 
+  "t-shirt", "sweatshirt/hoodie", "jackets/coats", "footwear", "jewlery"
+];
 
 interface BatchedOutfit {
   base: VaultItem;
@@ -34,6 +41,8 @@ interface BatchedOutfit {
 
 export default function Vault({ userVector }: VaultProps) {
   const [activeTab, setActiveTab] = useState<VaultTab>("recommendations");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("recommended");
   const [allItems, setAllItems] = useState<VaultItem[]>([]);
   const [displayedItems, setDisplayedItems] = useState<VaultItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +88,7 @@ export default function Vault({ userVector }: VaultProps) {
       try {
         const { data, error: fetchError } = await supabase
           .from('vault')
-          .select('id, brand_name, item_name, price, product_link, image_url, dna_vector, category, base_color, primary_pillar, standardized_aesthetic_tags');
+          .select('id, brand_name, item_name, price, product_link, image_url, dna_vector, category, base_color, item_finish, primary_pillar, standardized_aesthetic_tags');
 
         if (fetchError) throw fetchError;
         setAllItems(data || []);
@@ -98,43 +107,52 @@ export default function Vault({ userVector }: VaultProps) {
   useEffect(() => {
     if (allItems.length === 0) return;
 
+    let filtered = [...allItems];
+
+    // Majority Pillar Logic Identification
+    const pillarNames = ['old money', 'ivy', 'soft boy', 'streetwear'];
+    const maxIndex = userVector.indexOf(Math.max(...userVector));
+    const majorityPillar = pillarNames[maxIndex];
+
     if (activeTab === "vision" && visionVector) {
-      // Vision Engine: Correlation Scan
-      const correlated = allItems
-        .map(item => {
-          const itemVector = parseVector(item.dna_vector);
-          const similarity = calculateSimilarity(visionVector, itemVector);
-          
-          // Check for at least one matching aesthetic tag
-          const itemTags = item.standardized_aesthetic_tags || [];
-          const hasTagMatch = visionTags.length === 0 || itemTags.some(tag => visionTags.includes(tag.toLowerCase()));
-          
-          return { ...item, similarity, hasTagMatch };
-        })
-        .filter(item => item.hasTagMatch)
-        .sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
-
-      setDisplayedItems(correlated.slice(0, 100)); // Vision results limit: 100
+      // Vision Engine: Atmospheric Scan
+      filtered = filtered.map(item => {
+        const itemVector = parseVector(item.dna_vector);
+        const similarity = calculateSimilarity(visionVector, itemVector);
+        const itemTags = item.standardized_aesthetic_tags || [];
+        const hasTagMatch = visionTags.length === 0 || itemTags.some(tag => visionTags.includes(tag.toLowerCase()));
+        return { ...item, similarity, hasTagMatch };
+      }).filter(item => item.hasTagMatch);
     } else if (activeTab === "recommendations") {
-      // Recommendation Engine: Majority Pillar Logic
-      const pillarNames = ['old money', 'ivy', 'soft boy', 'streetwear'];
-      const maxIndex = userVector.indexOf(Math.max(...userVector));
-      const primaryPillar = pillarNames[maxIndex];
-
-      const correlated = allItems
-        .filter(item => (item.primary_pillar || "").toLowerCase() === primaryPillar)
+      // Recommendation Engine: Pillar Priority Guardrail
+      filtered = filtered
+        .filter(item => (item.primary_pillar || "").toLowerCase() === majorityPillar)
         .map(item => {
           const itemVector = parseVector(item.dna_vector);
           return {
             ...item,
             similarity: calculateSimilarity(userVector, itemVector)
           };
-        })
-        .sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
-
-      setDisplayedItems(correlated.slice(0, 100)); // Recommendation limit: 100
+        });
     }
-  }, [allItems, activeTab, userVector, visionVector, visionTags]);
+
+    // Category Filtering
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(item => (item.category || "").toLowerCase() === selectedCategory.toLowerCase());
+    }
+
+    // Sorting Logic
+    if (sortOrder === "price_asc") {
+      filtered.sort((a, b) => a.price - b.price);
+    } else if (sortOrder === "price_desc") {
+      filtered.sort((a, b) => b.price - a.price);
+    } else {
+      // Recommended (Monarchy Sort): Already prioritized by pillar, now sort by proximity
+      filtered.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
+    }
+
+    setDisplayedItems(filtered.slice(0, 100));
+  }, [allItems, activeTab, userVector, visionVector, visionTags, selectedCategory, sortOrder]);
 
   const handleMatchAndBatch = async (item: VaultItem) => {
     setIsBatching(true);
@@ -142,140 +160,61 @@ export default function Vault({ userVector }: VaultProps) {
     setActiveTab("batch");
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      const heroCategory = (item.category || "").toLowerCase();
       
-      const baseCategory = (item.category || "").toLowerCase();
-      
-      // Define Category Archetypes
       const CAT_TOPS = ["jackets/coats", "t-shirt", "sweatshirt/hoodie", "shirt", "outerwear", "tops", "jacket", "knitwear"];
       const CAT_BOTTOMS = ["pant", "shorts", "pants", "bottoms", "trouser", "trousers"];
       const CAT_FULL = ["co-ords", "suits", "co-ord", "suit"];
       const CAT_FOOTWEAR = ["footwear", "shoes", "sneakers", "loafers", "boots"];
       const CAT_JEWELRY = ["jewelry", "jewellery", "accessory", "accessories", "chain", "watch", "ring"];
 
-      // Determine Target Archetypes based on Base Category
-      let targetArchetypes: { name: string, list: string[] }[] = [];
-
-      if (CAT_BOTTOMS.some(c => baseCategory.includes(c))) {
-        // Base is Bottom -> Target Tops, Footwear, Jewelry
-        targetArchetypes = [
-          { name: "Tops", list: CAT_TOPS },
-          { name: "Footwear", list: CAT_FOOTWEAR },
-          { name: "Jewelry", list: CAT_JEWELRY }
-        ];
-      } else if (CAT_TOPS.some(c => baseCategory.includes(c))) {
-        // Base is Top -> Target Bottoms, Footwear, Jewelry
-        targetArchetypes = [
-          { name: "Bottoms", list: CAT_BOTTOMS },
-          { name: "Footwear", list: CAT_FOOTWEAR },
-          { name: "Jewelry", list: CAT_JEWELRY }
-        ];
-      } else if (CAT_FULL.some(c => baseCategory.includes(c))) {
-        // Base is Full Set -> Target Footwear, Jewelry
-        targetArchetypes = [
-          { name: "Footwear", list: CAT_FOOTWEAR },
-          { name: "Jewelry", list: CAT_JEWELRY }
-        ];
+      let targets: { name: string, list: string[] }[] = [];
+      if (CAT_BOTTOMS.some(c => heroCategory.includes(c))) {
+        targets = [{ name: "Tops", list: CAT_TOPS }, { name: "Footwear", list: CAT_FOOTWEAR }, { name: "Jewelry", list: CAT_JEWELRY }];
+      } else if (CAT_TOPS.some(c => heroCategory.includes(c))) {
+        targets = [{ name: "Bottoms", list: CAT_BOTTOMS }, { name: "Footwear", list: CAT_FOOTWEAR }, { name: "Jewelry", list: CAT_JEWELRY }];
+      } else if (CAT_FULL.some(c => heroCategory.includes(c))) {
+        targets = [{ name: "Footwear", list: CAT_FOOTWEAR }, { name: "Jewelry", list: CAT_JEWELRY }];
       } else {
-        // Default: Try to provide a full context
-        targetArchetypes = [
-          { name: "Tops", list: CAT_TOPS },
-          { name: "Bottoms", list: CAT_BOTTOMS },
-          { name: "Footwear", list: CAT_FOOTWEAR }
-        ];
+        targets = [{ name: "Tops", list: CAT_TOPS }, { name: "Bottoms", list: CAT_BOTTOMS }, { name: "Footwear", list: CAT_FOOTWEAR }];
       }
 
       const itemVector = parseVector(item.dna_vector);
 
-      // Step 1: Gemini Advisor - Get ideal colors for targets
-      const advicePrompt = `Item: ${item.brand_name} ${item.item_name} (${item.category}, ${item.base_color}).
-      Identify the ideal contrasting/complementary colors for: ${targetArchetypes.map(a => a.name).join(", ")}.
-      Return ONLY the color names separated by commas in the same order.`;
+      // Step A: Harmonic Logic Prediction
+      const advicePrompt = `Hero: ${item.brand_name} ${item.item_name} (Color: ${item.base_color}, Finish: ${item.item_finish || 'standard'}).
+      Predict ideal matching base_color for: ${targets.map(a => a.name).join(", ")}.
+      Return ONLY comma-separated colors.`;
 
       const adviceResult = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: [{ parts: [{ text: advicePrompt }] }]
       });
 
-      const adviceColors = (adviceResult.text || "").split(",").map(c => c.trim().toLowerCase());
+      const colors = (adviceResult.text || "").split(",").map(c => c.trim().toLowerCase());
 
-      // Step 2 & 3: DB Filtering + Batch Selection
-      const batchCandidates: VaultItem[] = [];
-
-      for (let i = 0; i < targetArchetypes.length; i++) {
-        const archetype = targetArchetypes[i];
-        const preferredColor = adviceColors[i];
-
-        const matchingItems = allItems
-          .filter(candidate => {
-            const cat = (candidate.category || "").toLowerCase();
-            const col = (candidate.base_color || "").toLowerCase();
-            const isCorrectCategory = archetype.list.some(libCat => cat.includes(libCat));
-            const isCorrectColor = !preferredColor || col.includes(preferredColor) || preferredColor.includes(col);
-            return isCorrectCategory && isCorrectColor && candidate.id !== item.id;
-          })
-          .map(candidate => ({ 
-            ...candidate, 
-            similarity: calculateSimilarity(itemVector, parseVector(candidate.dna_vector)) 
-          }))
-          .sort((a, b) => (b.similarity || 0) - (a.similarity || 0))
-          .slice(0, 5);
-
-        // If no items found with preferred color, fallback to just category match
-        if (matchingItems.length === 0) {
-          const fallbackItems = allItems
-            .filter(candidate => {
-              const cat = (candidate.category || "").toLowerCase();
-              return archetype.list.some(libCat => cat.includes(libCat)) && candidate.id !== item.id;
-            })
-            .map(candidate => ({ 
-              ...candidate, 
-              similarity: calculateSimilarity(itemVector, parseVector(candidate.dna_vector)) 
-            }))
-            .sort((a, b) => (b.similarity || 0) - (a.similarity || 0))
-            .slice(0, 3);
-          batchCandidates.push(...fallbackItems);
-        } else {
-          batchCandidates.push(...matchingItems);
-        }
-      }
-
-      // Final Step: Gemini Refinement
-      const selectionPrompt = `Core Item: ${item.brand_name} ${item.item_name}.
-      Style Goal: High-cohesion matching.
-      
+      // Step B: Proximity & Harmony Selection
+      const pool = allItems.filter(c => c.id !== item.id).slice(0, 100);
+      const selectionPrompt = `Selected items must align with Hero DNA and maintain texture harmony (${item.item_finish || 'standard'}).
+      Hero: ${item.brand_name} ${item.item_name}.
       Candidates:
-      ${batchCandidates.map((c, idx) => `${idx}: ${c.brand_name} ${c.item_name} (${c.category})`).join("\n")}
+      ${pool.map((c, i) => `${i}: ${c.brand_name} ${c.item_name} [${c.category}, ${c.base_color}, ${c.item_finish || 'standard'}]`).join("\n")}
       
-      Select exactly ONE index for each target archetype (${targetArchetypes.map(a => a.name).join(", ")}) to build the perfect outfit.
-      Return ONLY the indices separated by commas.`;
+      Pick the absolute BEST match for each: ${targets.map(a => a.name).join(", ")}.
+      Return ONLY indices, comma-separated.`;
 
       const finalResult = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: [{ parts: [{ text: selectionPrompt }] }]
       });
 
-      const selectedIndices = (finalResult.text || "").split(",").map(v => parseInt(v.trim())).filter(v => !isNaN(v));
-      const finalItems = selectedIndices.map(idx => batchCandidates[idx]).filter(Boolean);
+      const indices = (finalResult.text || "").split(",").map(v => parseInt(v.trim())).filter(v => !isNaN(v));
+      const finalItems = indices.map(idx => pool[idx]).filter(Boolean).slice(0, targets.length);
 
-      // Keep only one item per target archetype for a clean display
-      const uniqueItems: VaultItem[] = [];
-      const seenArchetypes = new Set();
-      finalItems.forEach(fi => {
-        const cat = (fi.category || "").toLowerCase();
-        const arch = targetArchetypes.find(a => a.list.some(l => cat.includes(l)))?.name || "Other";
-        if (!seenArchetypes.has(arch)) {
-          seenArchetypes.add(arch);
-          uniqueItems.push(fi);
-        }
-      });
-
-      setBatchedOutfit({
-        base: item,
-        matches: uniqueItems
-      });
+      setBatchedOutfit({ base: item, matches: finalItems });
     } catch (err) {
       console.error("Batching failed:", err);
-      setError("Style synthesis failed. Could not find compatible matches.");
+      setError("Outfit synthesis failed. Recalibrating style coordinates.");
     } finally {
       setIsBatching(false);
       setLoading(false);
@@ -346,7 +285,7 @@ TAGS: tag1, tag2, tag3
       reader.readAsDataURL(file);
     } catch (err) {
       console.error("Vision scan failed:", err);
-      setError("Style analysis failed. Please try a clearer photo.");
+      setError("Vision scan degraded. High-fidelity visual required.");
     } finally {
       setIsVisionScanning(false);
     }
@@ -395,6 +334,49 @@ TAGS: tag1, tag2, tag3
             Vision Results
           </button>
         </div>
+
+        {/* Global Controls: Filters & Sort */}
+        {(activeTab === "recommendations" || (activeTab === "vision" && visionVector)) && (
+          <div className="space-y-4 mb-8">
+            <div className="flex overflow-x-auto no-scrollbar gap-2 pb-2">
+              {CATEGORIES.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={cn(
+                    "px-4 py-2 text-[8px] font-black uppercase tracking-widest whitespace-nowrap border transition-all",
+                    selectedCategory === cat 
+                      ? "bg-neon text-basalt border-neon" 
+                      : "text-limestone/60 border-limestone/10 hover:border-limestone/40"
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            
+            <div className="flex gap-2">
+              {[
+                { id: "recommended", label: "Monarchy Sort" },
+                { id: "price_asc", label: "Price Low-High" },
+                { id: "price_desc", label: "Price High-Low" }
+              ].map(sort => (
+                <button
+                  key={sort.id}
+                  onClick={() => setSortOrder(sort.id as SortOrder)}
+                  className={cn(
+                    "flex-1 py-3 text-[7px] font-bold uppercase tracking-widest border transition-all",
+                    sortOrder === sort.id 
+                      ? "bg-moss/40 text-neon border-neon/30" 
+                      : "text-limestone/40 border-limestone/5 hover:border-limestone/20"
+                  )}
+                >
+                  {sort.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-8 pb-12 custom-scrollbar">
@@ -412,7 +394,7 @@ TAGS: tag1, tag2, tag3
                   <div className="flex justify-center">
                     <RefreshCcw className="w-8 h-8 text-neon animate-spin" />
                   </div>
-                  <p className="text-neon text-[10px] uppercase tracking-[0.3em] font-black">Synthesizing Batch...</p>
+                  <p className="text-neon text-[10px] uppercase tracking-[0.3em] font-black">Calibrating Style Batch...</p>
                 </div>
               ) : batchedOutfit ? (
                 <div className="space-y-12">
@@ -457,8 +439,8 @@ TAGS: tag1, tag2, tag3
               ) : (
                 <div className="py-20 text-center border-2 border-dashed border-limestone/10">
                   <Sparkles className="w-8 h-8 text-limestone/20 mx-auto mb-4" />
-                  <p className="text-limestone text-[9px] uppercase tracking-widest leading-loose max-w-[200px] mx-auto">
-                    Select an item from your DNA vault to start the outfitting pipeline.
+                  <p className="text-limestone text-[9px] uppercase tracking-widest leading-loose max-w-[280px] mx-auto">
+                    The ultimate combo. Select a 'Hero' item and we’ll instantly build a 3-piece Batch for you using AI color theory and texture matching.
                   </p>
                 </div>
               )}
@@ -475,8 +457,8 @@ TAGS: tag1, tag2, tag3
                 <Camera className="text-neon w-8 h-8" />
               </div>
               <h3 className="text-xl font-serif font-black text-neon mb-2 uppercase tracking-tighter">Aesthetic Scan</h3>
-              <p className="text-limestone text-[9px] uppercase tracking-widest leading-loose max-w-[200px] mb-8">
-                Upload a garment to extract its style vector and find matches.
+              <p className="text-limestone text-[9px] uppercase tracking-widest leading-loose max-w-[260px] mb-8">
+                Curating vibes, not clones. Upload any photo to find 100 pieces with the same atmosphere as your inspiration.
               </p>
               <label className="bg-neon text-basalt px-8 py-4 font-black text-[10px] uppercase tracking-widest cursor-pointer hover:bg-white transition-colors">
                 Select Hardware
@@ -493,6 +475,9 @@ TAGS: tag1, tag2, tag3
               {/* Profile Context for DNA Match */}
               {activeTab === "recommendations" && (
                 <div className="mb-8 p-6 bg-moss/20 border border-limestone/10">
+                  <p className="text-[9px] text-limestone/60 uppercase tracking-widest leading-relaxed mb-4 italic">
+                    This is your personal vault. We prioritize your Majority Pillar to show you 100 items that mathematically fit your style archetype.
+                  </p>
                   <div className="flex justify-between items-start mb-4">
                     <span className="text-[9px] font-bold text-neon tracking-widest uppercase">Identity Profile</span>
                     <Sparkles className="w-3 h-3 text-neon/40" />

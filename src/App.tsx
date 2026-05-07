@@ -58,7 +58,6 @@ export default function App() {
                   
                   <h1 className="text-[85px] font-serif font-black leading-[0.75] mb-12 tracking-[-0.05em]">
                     HEIST.<br /> 
-                    <span className="italic opacity-40">Elite</span> <br />
                     VAULT.
                   </h1>
                   
@@ -70,7 +69,7 @@ export default function App() {
                     </p>
                     <div className="h-[1px] w-full bg-limestone/20" />
                     <p className="text-limestone text-[9px] uppercase tracking-widest leading-loose">
-                      Vector-based matching beyond the limits of human reviews. Access the expert consensus.
+                      Clueless? Click the button below to start the quiz, find your Fashion DNA, and unlock the vault.
                     </p>
                   </div>
                 </div>
