@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { cn, formatCurrency } from "../lib/utils";
 import { ExternalLink, Camera, Sparkles, RefreshCcw, LayoutGrid, Scan, ChevronRight } from "lucide-react";
 import { getAestheticIdentity } from "../logic/calculator";
+import { GoogleGenAI } from "@google/genai";
 
 interface VaultItem {
   id: string;
@@ -106,26 +107,58 @@ export default function Vault({ userVector }: VaultProps) {
 
     setIsVisionScanning(true);
     setLoading(true);
+    setError(null);
     try {
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64 = (reader.result as string).split(',')[1];
-        const res = await fetch('/api/vision', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: base64 })
+        
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+        
+        const prompt = `
+Act as an elite fashion analyst. Analyze the garment in the image and extract its style DNA across 4 specific pillars. 
+
+DEFINITIONS:
+1. **Old Money (OM)**: Quiet luxury, neutral palettes (cream, navy, beige), premium natural fabrics (linen, cashmere, silk), tailored but relaxed fits, absolute minimalism, zero visible logos.
+2. **Ivy (IV)**: Collegiate heritage. Oxford shirts, cable-knit sweaters, loafers, rugby shirts, chinos, heraldic crests, structured wool, "preppy" but academic.
+3. **Soft Boy (SB)**: Artistic and romanticized. Flowy silhouettes, cardigans, vintage-washed denim, pastel or muted "mori" earth tones, creative layering, 90s indie/skater crossover.
+4. **Streetwear (SW)**: Modern urban edge. Graphic tees, hoodies, technical fabrics (nylon, ripstop), cargo pockets, chunky sneakers, bold branding/logos, oversized boxy fits.
+
+INSTRUCTIONS:
+- Analyze fabric texture, silhouette, hardware, and color story.
+- Assign a weight (0.0 to 1.0) to each pillar.
+- The 4 weights must sum to exactly 1.0.
+- Return ONLY the 4 numbers separated by commas.
+
+Example: 0.85, 0.15, 0.00, 0.00
+`;
+
+        const response = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: [
+            {
+              parts: [
+                { text: prompt },
+                { inlineData: { mimeType: file.type || "image/jpeg", data: base64 } }
+              ]
+            }
+          ]
         });
-        const data = await res.json();
-        if (data.vector) {
-          setVisionVector(data.vector);
+
+        const text = response.text || "";
+        const vector = text.split(",").map(v => parseFloat(v.trim())).filter(v => !isNaN(v));
+        
+        if (vector.length === 4) {
+          setVisionVector(vector);
           setActiveTab("vision");
-          // fetchItems is triggered by useEffect
+        } else {
+          throw new Error("Invalid style DNA format received.");
         }
       };
       reader.readAsDataURL(file);
     } catch (err) {
       console.error("Vision scan failed:", err);
-      setError("Image analysis error.");
+      setError("Style analysis failed. Please try a clearer photo.");
     } finally {
       setIsVisionScanning(false);
     }

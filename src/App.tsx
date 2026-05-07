@@ -118,7 +118,7 @@ export default function App() {
         {/* Footnote */}
         <footer className="py-8 px-8 border-t border-limestone/10 bg-basalt">
           <p className="text-[8px] uppercase tracking-[0.4em] text-limestone/40 text-center font-bold">
-            PROPRIETARY VECTOR GRID © 2024
+            HEIST. v1.0.4
           </p>
         </footer>
       </div>
