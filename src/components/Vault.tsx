@@ -53,7 +53,14 @@ export default function Vault({ userVector }: VaultProps) {
   const [batchedOutfit, setBatchedOutfit] = useState<BatchedOutfit | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Credit & Auth State
+  const [userProfile, setUserProfile] = useState<{ id: string, email: string, scan_credits: number, batch_credits: number } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
   const identity = getAestheticIdentity(userVector);
+
+  // Helper: admin check
+  const checkAdmin = (email: string) => email.toLowerCase() === "shravan.p1877@gmail.com";
 
   // Helper: Cosine Similarity / Dot Product since vectors are normalized
   const calculateSimilarity = (v1: number[], v2: number[]) => {
@@ -76,9 +83,9 @@ export default function Vault({ userVector }: VaultProps) {
     return [0.25, 0.25, 0.25, 0.25];
   };
 
-  // 1. Fetch ALL items once
+  // 1. Fetch Profile and ALL items once
   useEffect(() => {
-    async function fetchVault() {
+    async function initVault() {
       if (!supabase) {
         setError("Database Link Missing");
         setLoading(false);
@@ -86,6 +93,28 @@ export default function Vault({ userVector }: VaultProps) {
       }
       
       try {
+        // Fetch User Info
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const isUserAdmin = checkAdmin(user.email || "");
+          setIsAdmin(isUserAdmin);
+
+          const { data: profile, error: pError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+          if (!pError && profile) {
+            setUserProfile({
+              id: profile.id,
+              email: user.email || "",
+              scan_credits: profile.scan_credits,
+              batch_credits: profile.batch_credits
+            });
+          }
+        }
+
         const { data, error: fetchError } = await supabase
           .from('vault')
           .select('id, brand_name, item_name, price, product_link, image_url, dna_vector, category, base_color, item_finish, primary_pillar, standardized_aesthetic_tags');
@@ -100,7 +129,7 @@ export default function Vault({ userVector }: VaultProps) {
       }
     }
 
-    fetchVault();
+    initVault();
   }, []);
 
   // 2. Correlation Logic: Triggered when data arrives, tab switches, or new vectors (quiz/vision) are set
@@ -155,6 +184,12 @@ export default function Vault({ userVector }: VaultProps) {
   }, [allItems, activeTab, userVector, visionVector, visionTags, selectedCategory, sortOrder]);
 
   const handleMatchAndBatch = async (item: VaultItem) => {
+    // Credit Guard
+    if (!isAdmin && (userProfile?.batch_credits || 0) <= 0) {
+      setError("monarchy limit reached: zero batch credits remaining.");
+      return;
+    }
+
     setIsBatching(true);
     setLoading(true);
     setActiveTab("batch");
@@ -212,6 +247,13 @@ export default function Vault({ userVector }: VaultProps) {
       const finalItems = indices.map(idx => pool[idx]).filter(Boolean).slice(0, targets.length);
 
       setBatchedOutfit({ base: item, matches: finalItems });
+
+      // Decrement Credits
+      if (!isAdmin && userProfile) {
+        const newCredits = userProfile.batch_credits - 1;
+        await supabase?.from('profiles').update({ batch_credits: newCredits }).eq('id', userProfile.id);
+        setUserProfile(prev => prev ? { ...prev, batch_credits: newCredits } : null);
+      }
     } catch (err) {
       console.error("Batching failed:", err);
       setError("Outfit synthesis failed. Recalibrating style coordinates.");
@@ -223,6 +265,12 @@ export default function Vault({ userVector }: VaultProps) {
   const handleVisionScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Credit Guard
+    if (!isAdmin && (userProfile?.scan_credits || 0) <= 0) {
+      setError("monarchy limit reached: zero scan credits remaining.");
+      return;
+    }
 
     setIsVisionScanning(true);
     setLoading(true);
@@ -278,6 +326,13 @@ TAGS: tag1, tag2, tag3
           }
 
           setActiveTab("vision");
+
+          // Decrement Credits
+          if (!isAdmin && userProfile) {
+            const newCredits = userProfile.scan_credits - 1;
+            await supabase?.from('profiles').update({ scan_credits: newCredits }).eq('id', userProfile.id);
+            setUserProfile(prev => prev ? { ...prev, scan_credits: newCredits } : null);
+          }
         } else {
           throw new Error("Invalid style DNA format received.");
         }
@@ -299,8 +354,22 @@ TAGS: tag1, tag2, tag3
           <h2 className="text-4xl font-serif font-black text-neon tracking-tighter uppercase">
             {activeTab === "recommendations" ? "Your DNA" : "Vision Scan"}
           </h2>
-          <div className="p-2 border border-limestone/20 bg-moss/20">
-            <LayoutGrid className="w-4 h-4 text-neon/40" />
+          <div className="flex items-center gap-4">
+            {userProfile && (
+              <div className="flex gap-4 mr-4">
+                <div className="text-right">
+                  <p className="text-[7px] text-limestone uppercase tracking-widest leading-none mb-1">Scan Credits</p>
+                  <p className="text-[10px] font-mono font-black text-neon leading-none">{isAdmin ? "∞" : userProfile.scan_credits}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[7px] text-limestone uppercase tracking-widest leading-none mb-1">Batch Credits</p>
+                  <p className="text-[10px] font-mono font-black text-neon leading-none">{isAdmin ? "∞" : userProfile.batch_credits}</p>
+                </div>
+              </div>
+            )}
+            <div className="p-2 border border-limestone/20 bg-moss/20">
+              <LayoutGrid className="w-4 h-4 text-neon/40" />
+            </div>
           </div>
         </div>
 
