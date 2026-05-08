@@ -73,52 +73,63 @@ export default function App() {
     }, 2500);
   };
 
-  const handleLogin = async () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!supabase) return;
-    
-    // Supabase Auth Popup implementation
-    // We open a popup to handle the OAuth flow without redirecting the main App (which is in an iframe)
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        skipBrowserRedirect: true, // This allows us to open the URL in a custom popup
-      }
-    });
+    setAuthError(null);
+    setLoading(true);
 
-    if (error) {
-      console.error("Login failed:", error.message);
-      return;
-    }
-
-    if (data?.url) {
-      const authWindow = window.open(data.url, "heist_auth", "width=600,height=700");
-      
-      const messageHandler = async (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
-        if (event.data?.type === "AUTH_SUCCESS") {
-          const { data: { session } } = await supabase.auth.getSession();
-          setSession(session);
-          
-          if (session && userVector) {
-            // Save the quiz results to the newly authenticated profile
-            await supabase.from('profiles').update({ dna_vector: userVector }).eq('id', session.user.id);
-            setView("vault");
+    try {
+      if (authMode === "signup") {
+        const { data, error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            data: {
+              dna_vector: userVector || [0.25, 0.25, 0.25, 0.25]
+            }
           }
-          window.removeEventListener("message", messageHandler);
+        });
+        if (error) throw error;
+        if (data.session) {
+          setSession(data.session);
+          if (userVector) setView("vault");
+        } else {
+          setAuthError("Check your email for verification link.");
         }
-      };
-
-      window.addEventListener("message", messageHandler);
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        if (data.session) {
+          setSession(data.session);
+          setView("vault");
+        }
+      }
+    } catch (err: any) {
+      setAuthError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleSignOut = async () => {
+    await supabase?.auth.signOut();
+    setSession(null);
+    setView("home");
+  };
+
+  const handleLogin = () => setView("auth_required");
 
   const handleSavedSignIn = async () => {
     if (session) {
       if (userVector) {
         setView("vault");
       } else {
-        // Fetch again if somehow missing
         const { data: profile } = await supabase!
           .from('profiles')
           .select('dna_vector')
@@ -132,16 +143,15 @@ export default function App() {
           setUserVector(vector);
           setView("vault");
         } else {
-          // No DNA vector found, start quiz
           setView("diagnostic");
         }
       }
     } else {
-      handleLogin();
+      setView("auth_required");
     }
   };
 
-  if (loading) {
+  if (loading && !session) {
     return (
       <div className="bg-basalt min-h-screen flex items-center justify-center">
         <div className="w-12 h-12 border-2 border-neon border-t-transparent rounded-full animate-spin" />
@@ -224,13 +234,21 @@ export default function App() {
                       </button>
                     </>
                   ) : (
-                    <button
-                      onClick={handleSavedSignIn}
-                      className="w-full bg-neon text-basalt py-6 flex items-center justify-center gap-3 group hover:bg-white transition-all duration-300 shadow-[0_0_20px_rgba(180,250,50,0.3)]"
-                    >
-                      <UserCircle className="w-4 h-4" />
-                      <span className="text-[10px] tracking-[0.3em] font-black uppercase">Saved Identity Sign In</span>
-                    </button>
+                    <div className="space-y-4">
+                      <button
+                        onClick={handleSavedSignIn}
+                        className="w-full bg-neon text-basalt py-6 flex items-center justify-center gap-3 group hover:bg-white transition-all duration-300 shadow-[0_0_20px_rgba(180,250,50,0.3)]"
+                      >
+                        <UserCircle className="w-4 h-4" />
+                        <span className="text-[10px] tracking-[0.3em] font-black uppercase">Resume Identity</span>
+                      </button>
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full py-4 text-limestone/40 font-black text-[9px] uppercase tracking-widest hover:text-limestone transition-colors"
+                      >
+                        De-authorize [{session.user.email?.split('@')[0]}]
+                      </button>
+                    </div>
                   )}
                 </div>
               </motion.div>
@@ -253,21 +271,62 @@ export default function App() {
                 key="auth_required"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="px-8 py-20 flex flex-col h-full bg-basalt items-center justify-center text-center"
+                className="px-8 py-12 flex flex-col h-full bg-basalt items-center justify-center text-center"
               >
-                <div className="mb-8 p-6 bg-moss/20 border border-neon/30 rounded-full">
-                  <ShieldCheck className="w-12 h-12 text-neon" />
+                <div className="mb-6 p-4 bg-moss/20 border border-neon/30 rounded-full">
+                  <ShieldCheck className="w-8 h-8 text-neon" />
                 </div>
-                <h2 className="text-2xl font-serif font-black text-neon mb-4 uppercase tracking-tight">Identity Required</h2>
-                <p className="text-limestone text-[10px] uppercase tracking-widest leading-loose mb-12 max-w-[280px]">
-                  DNA mapping complete. To unlock the vault and access Monarchy-tier results, you must verify your identity.
+                <h2 className="text-xl font-serif font-black text-neon mb-2 uppercase tracking-tight">Identity Required</h2>
+                <p className="text-limestone text-[9px] uppercase tracking-widest leading-loose mb-8 max-w-[240px]">
+                  DNA mapping complete. To unlock the vault and access Monarchy-tier results, verify your identity.
                 </p>
-                <button
-                  onClick={handleLogin}
-                  className="w-full bg-neon text-basalt py-6 flex items-center justify-center gap-3 group hover:bg-white transition-all duration-300"
+
+                <form onSubmit={handleEmailAuth} className="w-full space-y-4 mb-6">
+                  <div className="space-y-1">
+                    <input 
+                      type="email" 
+                      placeholder="EMAIL COORDINATES"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-graphite border border-limestone/20 p-4 text-[10px] font-mono text-neon placeholder:text-limestone/30 focus:border-neon outline-none transition-all uppercase"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <input 
+                      type="password" 
+                      placeholder="ACCESS KEY"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full bg-graphite border border-limestone/20 p-4 text-[10px] font-mono text-neon placeholder:text-limestone/30 focus:border-neon outline-none transition-all uppercase"
+                    />
+                  </div>
+                  {authError && <p className="text-[9px] text-red-500 uppercase font-bold">{authError}</p>}
+                  
+                  <button
+                    type="submit"
+                    className="w-full bg-neon text-basalt py-4 flex items-center justify-center gap-3 group hover:bg-white transition-all duration-300"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <div className="w-4 h-4 border-2 border-basalt border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <LogIn className="w-4 h-4" />
+                        <span className="text-[10px] tracking-[0.3em] font-black uppercase">
+                          {authMode === "signin" ? "Sign In" : "Sign Up"}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                <button 
+                  onClick={() => setAuthMode(authMode === "signin" ? "signup" : "signin")}
+                  className="text-neon/60 text-[9px] uppercase tracking-widest hover:text-neon underline"
                 >
-                  <LogIn className="w-4 h-4" />
-                  <span className="text-[10px] tracking-[0.3em] font-black uppercase">Verify via Google</span>
+                  {authMode === "signin" ? "Don't have an account? Sign Up" : "Already verified? Sign In"}
                 </button>
               </motion.div>
             )}
@@ -280,7 +339,7 @@ export default function App() {
                 exit={{ opacity: 0 }}
                 className="h-full"
               >
-                <Vault userVector={userVector} />
+                <Vault userVector={userVector} onSignOut={handleSignOut} />
               </motion.div>
             )}
           </AnimatePresence>

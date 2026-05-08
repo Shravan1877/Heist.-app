@@ -24,6 +24,7 @@ interface VaultItem {
 
 interface VaultProps {
   userVector: [number, number, number, number];
+  onSignOut?: () => void;
 }
 
 type VaultTab = "recommendations" | "vision" | "batch";
@@ -39,7 +40,7 @@ interface BatchedOutfit {
   matches: VaultItem[];
 }
 
-export default function Vault({ userVector }: VaultProps) {
+export default function Vault({ userVector, onSignOut }: VaultProps) {
   const [activeTab, setActiveTab] = useState<VaultTab>("recommendations");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("recommended");
@@ -99,16 +100,36 @@ export default function Vault({ userVector }: VaultProps) {
           const isUserAdmin = checkAdmin(user.email || "");
           setIsAdmin(isUserAdmin);
 
-          const { data: profile, error: pError } = await supabase
+          let { data: profile, error: pError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', user.id)
             .single();
 
-          if (!pError && profile) {
+          if (pError || !profile) {
+            // New User: Create Profile with defaults
+            const newProfile = {
+              id: user.id,
+              email: user.email || "",
+              scan_credits: 5,
+              batch_credits: 8,
+              dna_vector: userVector // Already have it from quiz
+            };
+            const { data: upserted, error: uError } = await supabase
+              .from('profiles')
+              .upsert(newProfile)
+              .select()
+              .single();
+            
+            if (!uError && upserted) {
+              profile = upserted;
+            }
+          }
+
+          if (profile) {
             setUserProfile({
               id: profile.id,
-              email: user.email || "",
+              email: profile.email || user.email || "",
               scan_credits: profile.scan_credits,
               batch_credits: profile.batch_credits
             });
@@ -356,20 +377,28 @@ TAGS: tag1, tag2, tag3
           </h2>
           <div className="flex items-center gap-4">
             {userProfile && (
-              <div className="flex gap-4 mr-4">
+              <div className="flex gap-4 mr-4 items-center">
+                <div className="hidden lg:block text-right pr-4 border-r border-limestone/10">
+                  <p className="text-[7px] text-limestone uppercase tracking-widest leading-none mb-1">Identity Verified</p>
+                  <p className="text-[9px] font-black text-neon truncate max-w-[120px]">{userProfile.email.split('@')[0]}</p>
+                </div>
                 <div className="text-right">
-                  <p className="text-[7px] text-limestone uppercase tracking-widest leading-none mb-1">Scan Credits</p>
+                  <p className="text-[7px] text-limestone uppercase tracking-widest leading-none mb-1">Scan</p>
                   <p className="text-[10px] font-mono font-black text-neon leading-none">{isAdmin ? "∞" : userProfile.scan_credits}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[7px] text-limestone uppercase tracking-widest leading-none mb-1">Batch Credits</p>
+                  <p className="text-[7px] text-limestone uppercase tracking-widest leading-none mb-1">Batch</p>
                   <p className="text-[10px] font-mono font-black text-neon leading-none">{isAdmin ? "∞" : userProfile.batch_credits}</p>
                 </div>
               </div>
             )}
-            <div className="p-2 border border-limestone/20 bg-moss/20">
-              <LayoutGrid className="w-4 h-4 text-neon/40" />
-            </div>
+            <button 
+              onClick={onSignOut}
+              className="p-2 border border-limestone/20 bg-moss/20 hover:bg-neon/10 transition-colors"
+              title="De-authorize Identity"
+            >
+              <LayoutGrid className="w-4 h-4 text-neon/40 hover:text-neon" />
+            </button>
           </div>
         </div>
 
