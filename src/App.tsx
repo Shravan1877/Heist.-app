@@ -80,7 +80,10 @@ export default function App() {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supabase) return;
+    if (!supabase) {
+      setAuthError("Supabase is not configured. Please check your environment variables.");
+      return;
+    }
     setAuthError(null);
     setLoading(true);
 
