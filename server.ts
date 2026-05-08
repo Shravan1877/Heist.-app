@@ -87,4 +87,9 @@ async function startServer() {
   });
 }
 
-startServer();
+// At the bottom of api/index.js
+if (process.env.NODE_ENV !== "production") {
+  startServer();
+}
+
+export default app;
