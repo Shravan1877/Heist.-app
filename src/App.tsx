@@ -87,6 +87,20 @@ export default function App() {
 
     try {
       if (authMode === "signup") {
+        // Enforce unique username check
+        if (username) {
+          const { data: existing } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('full_name', username)
+            .maybeSingle();
+          if (existing) {
+            setAuthError("This Identity String is already registered in the Vault.");
+            setLoading(false);
+            return;
+          }
+        }
+
         const { data, error } = await supabase.auth.signUp({ 
           email, 
           password,
@@ -170,25 +184,29 @@ export default function App() {
   }
 
   return (
-    <div className="bg-[#1A1A1A] min-h-screen text-neon font-sans selection:bg-neon/20 flex items-center justify-center">
-      <div className="w-full max-w-[450px] bg-basalt min-h-screen shadow-[0_0_100px_rgba(0,0,0,0.5)] flex flex-col relative overflow-hidden ring-1 ring-limestone/20">
+    <div className="bg-basalt min-h-screen text-neon font-sans selection:bg-neon/20 flex flex-col">
+      <div className="w-full h-full flex flex-col relative overflow-hidden">
         {/* Nav */}
-        <header className="h-20 px-8 flex items-center justify-between border-b border-limestone/10 bg-basalt/80 backdrop-blur-md sticky top-0 z-50">
+        <header className="h-28 px-12 md:px-24 flex items-center justify-between border-b border-neon/10 bg-basalt/80 backdrop-blur-xl sticky top-0 z-50">
           <button 
             onClick={() => setView("home")}
-            className="flex items-center gap-2 group"
+            className="flex items-center gap-4 group"
           >
-            <div className="w-6 h-6 bg-neon rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-              <span className="text-basalt text-[10px] font-black">H.</span>
+            <div className="w-10 h-10 bg-neon rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+              <span className="text-basalt text-xs font-black">H.</span>
             </div>
-            <span className="text-[10px] tracking-[0.4em] font-black uppercase text-neon">HEIST.</span>
+            <span className="text-sm tracking-[0.6em] font-black uppercase text-neon group-hover:text-white transition-colors">HEIST.</span>
           </button>
-          <div className="flex items-center gap-4">
-            <ShieldCheck className="w-4 h-4 text-limestone" />
+          <div className="flex items-center gap-6">
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 border border-neon/20 rounded-full bg-neon/5">
+              <div className="w-2 h-2 rounded-full bg-neon animate-pulse" />
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neon/80">Active Node</p>
+            </div>
+            <ShieldCheck className="w-6 h-6 text-neon/40" />
           </div>
         </header>
 
-        <main className="flex-1 flex flex-col min-h-0 bg-basalt">
+        <main className="flex-1 flex flex-col min-h-0 bg-basalt relative pt-12 md:pt-0">
           <AnimatePresence mode="wait">
             {view === "home" && (
               <motion.div
@@ -196,67 +214,81 @@ export default function App() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="px-8 py-20 flex flex-col h-full bg-basalt"
+                className="px-12 md:px-24 py-32 flex flex-col items-center justify-center min-h-[calc(100vh-160px)] text-center"
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-6">
-                    <div className="h-[1px] w-8 bg-neon" />
-                    <span className="text-[9px] tracking-[0.5em] text-neon font-black uppercase">Monarchy v1.0</span>
-                  </div>
+                <div className="max-w-5xl w-full flex flex-col items-center">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="flex items-center gap-4 mb-12"
+                  >
+                    <div className="h-[1px] w-16 bg-neon" />
+                    <span className="text-xs tracking-[0.8em] text-neon font-black uppercase">Monarchy v1.0 [Full Canvas]</span>
+                    <div className="h-[1px] w-16 bg-neon" />
+                  </motion.div>
                   
-                  <h1 className="text-[85px] font-serif font-black leading-[0.75] mb-12 tracking-[-0.05em]">
+                  <motion.h1 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4, duration: 0.8 }}
+                    className="text-[120px] md:text-[220px] font-serif font-black leading-[0.75] mb-16 tracking-[-0.07em] uppercase"
+                  >
                     HEIST.<br /> 
                     VAULT.
-                  </h1>
+                  </motion.h1>
                   
-                  <div className="space-y-6 max-w-[280px]">
-                    <p className="text-neon/80 text-xs font-medium leading-relaxed">
-                      Curated by experts. <br />
-                      Verified by AI. <br />
-                      Designed for the 1%.
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.6 }}
+                    className="space-y-10 max-w-2xl"
+                  >
+                    <p className="text-neon/80 text-lg md:text-xl font-medium leading-relaxed tracking-tight">
+                      Curated by experts. Verified by AI. Designed for the 1%. <br className="hidden md:block" />
+                      The world's most exclusive stylistic neural network.
                     </p>
-                    <div className="h-[1px] w-full bg-limestone/20" />
-                    <p className="text-limestone text-[9px] uppercase tracking-widest leading-loose">
-                      Clueless? Click the button below to start the quiz, find your Fashion DNA, and unlock the vault.
+                    <div className="h-[1px] w-full bg-neon/10" />
+                    <p className="text-limestone text-xs uppercase tracking-[0.3em] leading-loose">
+                      Clueless? Click below to begin atmospheric DNA mapping and unlock the high-tech vault.
                     </p>
-                  </div>
+                  </motion.div>
                 </div>
 
-                <div className="mt-auto pt-12 space-y-4">
+                <div className="mt-24 flex flex-col sm:flex-row gap-6 w-full max-w-2xl">
                   {!session ? (
                     <>
                       <button
                         onClick={startDiagnostic}
                         id="begin-diagnostic"
-                        className="w-full bg-graphite text-neon py-6 flex items-center justify-center gap-3 group hover:bg-neon hover:text-basalt transition-all duration-700 border border-limestone/30 relative overflow-hidden"
+                        className="flex-1 bg-neon text-basalt py-8 flex items-center justify-center gap-4 group transition-all duration-700 relative overflow-hidden shadow-[0_0_50px_rgba(180,250,50,0.1)]"
                       >
-                        <div className="absolute inset-0 bg-neon/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-                        <Sparkles className="w-4 h-4 relative z-10" />
-                        <span className="text-[10px] tracking-[0.3em] font-black uppercase relative z-10">Map DNA (New User)</span>
+                        <Sparkles className="w-5 h-5" />
+                        <span className="text-xs tracking-[0.4em] font-black uppercase">Map Style DNA</span>
                       </button>
 
                       <button
                         onClick={handleLogin}
-                        className="w-full bg-basalt text-limestone py-6 flex items-center justify-center gap-3 group hover:text-white transition-all duration-300 border border-limestone/10"
+                        className="flex-1 bg-transparent text-neon py-8 flex items-center justify-center gap-4 group hover:bg-neon/10 transition-all duration-300 border border-neon/20"
                       >
-                        <LogIn className="w-4 h-4" />
-                        <span className="text-[10px] tracking-[0.3em] font-black uppercase">Identity Sign In</span>
+                        <LogIn className="w-5 h-5" />
+                        <span className="text-xs tracking-[0.4em] font-black uppercase">Identity Verified</span>
                       </button>
                     </>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="flex flex-col gap-6 w-full">
                       <button
                         onClick={handleSavedSignIn}
-                        className="w-full bg-neon text-basalt py-6 flex items-center justify-center gap-3 group hover:bg-white transition-all duration-300 shadow-[0_0_20px_rgba(180,250,50,0.3)]"
+                        className="w-full bg-neon text-basalt py-8 flex items-center justify-center gap-4 group hover:scale-[1.02] transition-all duration-300 shadow-[0_0_60px_rgba(180,250,50,0.4)]"
                       >
-                        <UserCircle className="w-4 h-4" />
-                        <span className="text-[10px] tracking-[0.3em] font-black uppercase">Resume Identity</span>
+                        <UserCircle className="w-6 h-6" />
+                        <span className="text-xs tracking-[0.5em] font-black uppercase">Resume Identity</span>
                       </button>
                       <button
                         onClick={handleSignOut}
-                        className="w-full py-4 text-limestone/40 font-black text-[9px] uppercase tracking-widest hover:text-limestone transition-colors"
+                        className="w-full py-4 text-limestone/60 font-black text-xs uppercase tracking-[0.4em] hover:text-red-500 transition-colors"
                       >
-                        De-authorize [{session.user.email?.split('@')[0]}]
+                        De-authorize Neural Node [{session.user.email?.split('@')[0]}]
                       </button>
                     </div>
                   )}
@@ -267,40 +299,42 @@ export default function App() {
             {view === "diagnostic" && (
               <motion.div
                 key="diagnostic"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 className="h-full bg-basalt"
               >
-                <Diagnostic onComplete={handleDiagnosticComplete} />
+                <div className="max-w-7xl mx-auto w-full h-full p-8 md:p-24">
+                  <Diagnostic onComplete={handleDiagnosticComplete} />
+                </div>
               </motion.div>
             )}
 
             {view === "auth_required" && (
               <motion.div
                 key="auth_required"
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="px-8 py-12 flex flex-col h-full bg-basalt items-center justify-center text-center"
+                className="px-8 py-24 flex flex-col h-full bg-basalt items-center justify-center text-center min-h-[calc(100vh-160px)]"
               >
-                <div className="mb-6 p-4 bg-moss/20 border border-neon/30 rounded-full">
-                  <ShieldCheck className="w-8 h-8 text-neon" />
+                <div className="mb-12 p-8 bg-neon/10 border border-neon/30 rounded-full shadow-[0_0_40px_rgba(180,250,50,0.1)]">
+                  <ShieldCheck className="w-12 h-12 text-neon" />
                 </div>
-                <h2 className="text-xl font-serif font-black text-neon mb-2 uppercase tracking-tight">Identity Required</h2>
-                <p className="text-limestone text-[9px] uppercase tracking-widest leading-loose mb-8 max-w-[240px]">
-                  DNA mapping complete. To unlock the vault and access Monarchy-tier results, verify your identity.
+                <h2 className="text-5xl font-serif font-black text-neon mb-4 uppercase tracking-tighter">Identity Protocol</h2>
+                <p className="text-limestone text-[10px] md:text-xs uppercase tracking-[0.4em] leading-loose mb-16 max-w-md">
+                  DNA mapping verified. To unlock the vault and access Monarchy-tier results, synchronize your identity coordinates.
                 </p>
 
-                <form onSubmit={handleEmailAuth} className="w-full space-y-4 mb-6">
+                <form onSubmit={handleEmailAuth} className="w-full max-w-md space-y-6 mb-12">
                   {authMode === "signup" && (
                     <div className="space-y-1">
                       <input 
                         type="text" 
-                        placeholder="UNIQUE USERNAME"
+                        placeholder="AUTHENTICATION ALIAS"
                         required
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        className="w-full bg-graphite border border-limestone/20 p-4 text-[10px] font-mono text-neon placeholder:text-limestone/30 focus:border-neon outline-none transition-all uppercase"
+                        className="w-full bg-neon/5 border border-neon/10 p-6 text-xs font-mono text-neon placeholder:text-neon/20 focus:border-neon outline-none transition-all uppercase tracking-widest"
                       />
                     </div>
                   )}
@@ -311,33 +345,33 @@ export default function App() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-graphite border border-limestone/20 p-4 text-[10px] font-mono text-neon placeholder:text-limestone/30 focus:border-neon outline-none transition-all uppercase"
+                      className="w-full bg-neon/5 border border-neon/10 p-6 text-xs font-mono text-neon placeholder:text-neon/20 focus:border-neon outline-none transition-all uppercase tracking-widest"
                     />
                   </div>
                   <div className="space-y-1">
                     <input 
                       type="password" 
-                      placeholder="ACCESS KEY"
+                      placeholder="VAULT CRYPTO KEY"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-graphite border border-limestone/20 p-4 text-[10px] font-mono text-neon placeholder:text-limestone/30 focus:border-neon outline-none transition-all uppercase"
+                      className="w-full bg-neon/5 border border-neon/10 p-6 text-xs font-mono text-neon placeholder:text-neon/20 focus:border-neon outline-none transition-all uppercase tracking-widest"
                     />
                   </div>
-                  {authError && <p className="text-[9px] text-red-500 uppercase font-bold">{authError}</p>}
+                  {authError && <p className="text-[10px] text-red-500 uppercase font-black tracking-widest">{authError}</p>}
                   
                   <button
                     type="submit"
-                    className="w-full bg-neon text-basalt py-4 flex items-center justify-center gap-3 group hover:bg-white transition-all duration-300"
+                    className="w-full bg-neon text-basalt py-6 flex items-center justify-center gap-4 group hover:bg-white transition-all duration-300 shadow-[0_0_30px_rgba(180,250,50,0.2)]"
                     disabled={loading}
                   >
                     {loading ? (
-                      <div className="w-4 h-4 border-2 border-basalt border-t-transparent rounded-full animate-spin" />
+                      <div className="w-6 h-6 border-2 border-basalt border-t-transparent rounded-full animate-spin" />
                     ) : (
                       <>
-                        <LogIn className="w-4 h-4" />
-                        <span className="text-[10px] tracking-[0.3em] font-black uppercase">
-                          {authMode === "signin" ? "Sign In" : "Sign Up"}
+                        <LogIn className="w-5 h-5" />
+                        <span className="text-xs tracking-[0.5em] font-black uppercase">
+                          {authMode === "signin" ? "Verify Node" : "Register Node"}
                         </span>
                       </>
                     )}
@@ -346,9 +380,9 @@ export default function App() {
 
                 <button 
                   onClick={() => setAuthMode(authMode === "signin" ? "signup" : "signin")}
-                  className="text-neon/60 text-[9px] uppercase tracking-widest hover:text-neon underline"
+                  className="text-neon/40 text-[10px] uppercase font-black tracking-[0.4em] hover:text-neon transition-colors"
                 >
-                  {authMode === "signin" ? "Don't have an account? Sign Up" : "Already verified? Sign In"}
+                  {authMode === "signin" ? "NEW USER? INITIALIZE" : "ALREADY REGISTERED? SYNC"}
                 </button>
               </motion.div>
             )}
@@ -372,9 +406,9 @@ export default function App() {
         </main>
         
         {/* Footnote */}
-        <footer className="py-8 px-8 border-t border-limestone/10 bg-basalt">
-          <p className="text-[8px] uppercase tracking-[0.4em] text-limestone/40 text-center font-bold">
-            HEIST. v1.0.4
+        <footer className="py-12 flex flex-col items-center border-t border-neon/10 bg-basalt">
+          <p className="text-[10px] uppercase font-black tracking-[0.6em] text-neon/20">
+            HEIST. GLOBAL NETWORK v1.0.4 - FULL SPECTRUM
           </p>
         </footer>
       </div>
