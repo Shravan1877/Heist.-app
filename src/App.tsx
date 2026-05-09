@@ -61,7 +61,7 @@ export default function App() {
     
     // If logged in, save the new style DNA to profile
     if (session) {
-      await supabase?.from('profiles').update({ style_dna: vector }).eq('id', session.user.id);
+      await supabase?.from('profiles').update({ style_dna: JSON.stringify(vector) }).eq('id', session.user.id);
     }
 
     // Simulate high-end calculation delay

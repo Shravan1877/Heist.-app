@@ -115,11 +115,10 @@ export default function Vault({ userVector, onSignOut, onRetakeQuiz }: VaultProp
             // New User: Create Profile with defaults
             const newProfile = {
               id: user.id,
-              email: user.email || "",
               full_name: fullName,
               scan_credits: 5,
               batch_credits: 8,
-              style_dna: userVector
+              style_dna: userVector ? JSON.stringify(userVector) : null
             };
             const { data: upserted, error: uError } = await supabase
               .from('profiles')
@@ -143,14 +142,14 @@ export default function Vault({ userVector, onSignOut, onRetakeQuiz }: VaultProp
             }
             // Sync style_dna if missing in profile but present in local context (e.g. just finished quiz)
             if (!profile.style_dna && userVector) {
-              await supabase.from('profiles').update({ style_dna: userVector }).eq('id', user.id);
+              await supabase.from('profiles').update({ style_dna: JSON.stringify(userVector) }).eq('id', user.id);
             }
           }
 
           if (profile) {
             setUserProfile({
               id: profile.id,
-              email: profile.email || user.email || "",
+              email: user.email || "",
               full_name: profile.full_name || "",
               scan_credits: profile.scan_credits,
               batch_credits: profile.batch_credits
