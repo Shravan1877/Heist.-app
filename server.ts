@@ -52,106 +52,114 @@ setInterval(async () => {
   }
 }, 60000);
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-  app.use(express.json({ limit: '10mb' }));
-  
-  // API for Vercel Cron
-  app.get('/api/admin/reset-credits', async (req, res) => {
-    const authHeader = req.headers['authorization'];
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return res.status(401).json({ error: 'unauthorized' });
+app.use(express.json({ limit: '10mb' }));
+
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'active', platform: 'HEIST_CORE' });
+});
+
+// API for Vercel Cron
+app.get('/api/admin/reset-credits', async (req, res) => {
+  const authHeader = req.headers['authorization'];
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+  await performReset();
+  res.json({ status: 'success' });
+});
+
+// AI Proxy: Batch
+app.post('/api/ai/batch', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) return res.status(400).json({ error: 'Prompt missing' });
+    
+    if (!process.env.GOOGLE_GENAI_API_KEY && !process.env.GEMINI_API_KEY) {
+      throw new Error("AI Credentials missing in Vault.");
     }
-    await performReset();
-    res.json({ status: 'success' });
-  });
-  
-  // AI Proxy: Batch
-  app.post('/api/ai/batch', async (req, res) => {
-    try {
-      const { prompt } = req.body;
-      if (!prompt) return res.status(400).json({ error: 'Prompt missing' });
-      
-      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      
-      res.json({ text });
-    } catch (err: any) {
-      console.error("AI Batch Error:", err);
-      res.status(500).json({ error: err.message || "Internal AI Error" });
+
+    const result = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: [{ parts: [{ text: prompt }] }]
+    });
+    
+    res.json({ text: result.text });
+  } catch (err: any) {
+    console.error("AI Batch Error:", err);
+    res.status(500).json({ error: err.message || "Internal AI Error" });
+  }
+});
+
+// AI Proxy: Vision
+app.post('/api/ai/vision', async (req, res) => {
+  try {
+    const { prompt, image, mimeType } = req.body;
+    if (!prompt || !image) return res.status(400).json({ error: 'Missing parameters' });
+
+    if (!process.env.GOOGLE_GENAI_API_KEY && !process.env.GEMINI_API_KEY) {
+      throw new Error("AI Credentials missing in Vault.");
     }
-  });
 
-  // AI Proxy: Vision
-  app.post('/api/ai/vision', async (req, res) => {
-    try {
-      const { prompt, image, mimeType } = req.body;
-      if (!prompt || !image) return res.status(400).json({ error: 'Missing parameters' });
-
-      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const result = await model.generateContent([
-        prompt,
+    const result = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: [
         {
-          inlineData: {
-            mimeType: mimeType || "image/jpeg",
-            data: image
-          }
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType: mimeType || "image/jpeg", data: image } }
+          ]
         }
-      ]);
+      ]
+    });
 
-      const response = await result.response;
-      const text = response.text();
+    res.json({ text: result.text });
+  } catch (err: any) {
+    console.error("AI Vision Error:", err);
+    res.status(500).json({ error: err.message || "Internal AI Vision Error" });
+  }
+});
 
-      res.json({ text });
-    } catch (err: any) {
-      console.error("AI Vision Error:", err);
-      res.status(500).json({ error: err.message || "Internal AI Vision Error" });
-    }
-  });
-
-  // HEIST Auth Callback for Popups
-  app.get('/auth/callback', (req, res) => {
-    res.send(`
-      <html>
-        <head>
-          <title>HEIST. Identity Verified</title>
-          <style>
-            body { background: #0A0A0A; color: #B4FA32; font-family: sans-serif; display: flex; items-center; justify-content: center; height: 100vh; margin: 0; }
-            .content { text-align: center; border: 1px solid rgba(180,250,50,0.2); padding: 40px; }
-            h1 { font-size: 14px; letter-spacing: 0.4em; text-transform: uppercase; margin-bottom: 20px; }
-            p { font-size: 10px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.2em; }
-          </style>
-        </head>
-        <body>
-          <div class="content">
-            <h1>Identity Verified</h1>
-            <p>Closing Secure Channel...</p>
-          </div>
-          <script>
-            // Notify the parent window
-            if (window.opener) {
-              try {
-                window.opener.postMessage({ type: 'AUTH_SUCCESS' }, window.location.origin);
-                console.log("Message sent to opener");
-                setTimeout(() => window.close(), 1500);
-              } catch (e) {
-                console.error("Failed to post message to opener", e);
-                document.body.innerHTML = '<h1>Error</h1><p>Communication failed. Please return to the main window and refresh.</p>';
-              }
-            } else {
-              window.location.href = '/';
+// HEIST Auth Callback for Popups
+app.get('/auth/callback', (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <title>HEIST. Identity Verified</title>
+        <style>
+          body { background: #0A0A0A; color: #B4FA32; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+          .content { text-align: center; border: 1px solid rgba(180,250,50,0.2); padding: 40px; }
+          h1 { font-size: 14px; letter-spacing: 0.4em; text-transform: uppercase; margin-bottom: 20px; }
+          p { font-size: 10px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.2em; }
+        </style>
+      </head>
+      <body>
+        <div class="content">
+          <h1>Identity Verified</h1>
+          <p>Closing Secure Channel...</p>
+        </div>
+        <script>
+          if (window.opener) {
+            try {
+              window.opener.postMessage({ type: 'AUTH_SUCCESS' }, window.location.origin);
+              setTimeout(() => window.close(), 1500);
+            } catch (e) {
+              document.body.innerHTML = '<h1>Error</h1><p>Communication failed.</p>';
             }
-          </script>
-        </body>
-      </html>
-    `);
-  });
+          } else {
+            window.location.href = '/';
+          }
+        </script>
+      </body>
+    </html>
+  `);
+});
 
-  // Vite middleware for development
+// Server setup
+async function setupServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -165,14 +173,17 @@ async function startServer() {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
-
-  return app;
 }
 
-const app = await startServer();
-if (process.env.NODE_ENV !== "production") {
-  app.listen(3000, "0.0.0.0", () => {
-    console.log(`HEIST. Server running on http://localhost:3000`);
-  });
-}
+const portNumber = Number(PORT);
+
+// Global initialization
+setupServer().then(() => {
+  if (process.env.NODE_ENV !== "production") {
+    app.listen(portNumber, "0.0.0.0", () => {
+      console.log(`HEIST. Server running on http://localhost:${portNumber}`);
+    });
+  }
+});
+
 export default app;
