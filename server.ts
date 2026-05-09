@@ -1,5 +1,4 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
@@ -45,12 +44,14 @@ async function performReset() {
 }
 
 // Keep the interval for non-serverless environments
-setInterval(async () => {
-  const now = new Date();
-  if (now.getUTCHours() === 18 && now.getUTCMinutes() === 29) {
-    await performReset();
-  }
-}, 60000);
+if (process.env.NODE_ENV !== "production") {
+  setInterval(async () => {
+    const now = new Date();
+    if (now.getUTCHours() === 18 && now.getUTCMinutes() === 29) {
+      await performReset();
+    }
+  }, 60000);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -160,18 +161,24 @@ app.get('/auth/callback', (req, res) => {
 
 // Server setup
 async function setupServer() {
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+  try {
+    if (process.env.NODE_ENV !== "production") {
+      // Dynamic import to avoid loading Vite in production
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+    } else {
+      const distPath = path.join(process.cwd(), 'dist');
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    }
+  } catch (err) {
+    console.error("Critical: Failed to initialize HEIST logic core:", err);
   }
 }
 
