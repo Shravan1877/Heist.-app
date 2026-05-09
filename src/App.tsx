@@ -213,7 +213,7 @@ export default function App() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.4, duration: 0.8 }}
-                    className="text-[120px] md:text-[220px] font-serif font-black leading-[0.75] mb-16 tracking-[-0.07em] uppercase"
+                    className="text-7xl sm:text-9xl md:text-[220px] font-serif font-black leading-[0.75] mb-8 md:mb-16 tracking-[-0.07em] uppercase break-words px-4"
                   >
                     HEIST.<br /> 
                     VAULT.
@@ -227,7 +227,7 @@ export default function App() {
                   >
                     <p className="text-neon/80 text-lg md:text-xl font-medium leading-relaxed tracking-tight">
                       Curated by experts. Verified by AI. Designed for the 1%. <br className="hidden md:block" />
-                      The world's most exclusive stylistic neural network.
+                      Vault coordinates optimized for precision stylistic matching.
                     </p>
                     <div className="h-[1px] w-full bg-neon/10" />
                     <p className="text-limestone text-xs uppercase tracking-[0.3em] leading-loose">
@@ -236,7 +236,7 @@ export default function App() {
                   </motion.div>
                 </div>
 
-                <div className="mt-24 flex flex-col sm:flex-row gap-6 w-full max-w-2xl">
+                <div className="mt-12 md:mt-24 flex flex-col sm:flex-row gap-4 md:gap-6 w-full max-w-2xl px-6">
                   {!session ? (
                     <>
                       <button
@@ -301,9 +301,9 @@ export default function App() {
                 <div className="mb-12 p-8 bg-neon/10 border border-neon/30 shadow-[0_0_40px_rgba(180,250,50,0.1)]">
                   <ShieldCheck className="w-12 h-12 text-neon" />
                 </div>
-                <h2 className="text-5xl font-serif font-black text-neon mb-4 uppercase tracking-tighter">Identity Protocol</h2>
+                <h2 className="text-4xl sm:text-5xl font-serif font-black text-neon mb-4 uppercase tracking-tighter">Vault Access</h2>
                 <p className="text-limestone text-[10px] md:text-xs uppercase tracking-[0.4em] leading-loose mb-16 max-w-md">
-                  DNA mapping verified. To unlock the vault and access Monarchy-tier results, synchronize your identity coordinates.
+                  DNA mapping verified. To unlock the vault and access curated results, synchronize your identity coordinates.
                 </p>
 
                 <form onSubmit={handleEmailAuth} className="w-full max-w-md space-y-6 mb-12">
@@ -386,46 +386,47 @@ export default function App() {
           </AnimatePresence>
         </main>
         
-        {/* Bottom Navigation Dock */}
-        <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 p-2 bg-basalt/60 backdrop-blur-2xl border border-limestone/40 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
-          <button 
-            onClick={() => setView("vault")}
-            className={cn(
-              "px-8 py-4 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
-              view === "vault" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
-            )}
-          >
-            <Archive className="w-5 h-5" />
-            <span className="text-[8px] font-black tracking-widest uppercase">Archive</span>
-          </button>
-          
-          <button 
-            onClick={() => setView("diagnostic")}
-            className={cn(
-              "px-8 py-4 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
-              view === "diagnostic" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
-            )}
-          >
-            <Scan className="w-5 h-5" />
-            <span className="text-[8px] font-black tracking-widest uppercase">Scan</span>
-          </button>
+        <nav className="fixed bottom-4 md:bottom-8 left-0 right-0 md:left-1/2 md:-translate-x-1/2 z-[100] flex items-center justify-center pointer-events-none">
+          <div className="flex items-center gap-1 md:gap-2 p-1.5 md:p-2 bg-basalt/60 backdrop-blur-2xl border border-limestone/40 shadow-[0_0_40px_rgba(0,0,0,0.5)] pointer-events-auto mx-4">
+            <button 
+              onClick={() => setView("vault")}
+              className={cn(
+                "flex-1 md:px-8 py-3 md:py-4 px-4 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
+                view === "vault" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
+              )}
+            >
+              <Archive className="w-4 h-4 md:w-5 md:h-5" />
+              <span className="text-[7px] md:text-[8px] font-black tracking-widest uppercase">Archive</span>
+            </button>
+            
+            <button 
+              onClick={() => setView("diagnostic")}
+              className={cn(
+                "flex-1 md:px-8 py-3 md:py-4 px-4 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
+                view === "diagnostic" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
+              )}
+            >
+              <Scan className="w-4 h-4 md:w-5 md:h-5" />
+              <span className="text-[7px] md:text-[8px] font-black tracking-widest uppercase">Scan</span>
+            </button>
 
-          <button 
-            onClick={() => setView("home")}
-            className={cn(
-              "px-8 py-4 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
-              view === "home" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
-            )}
-          >
-            <ShieldCheck className="w-5 h-5" />
-            <span className="text-[8px] font-black tracking-widest uppercase">Protocol</span>
-          </button>
+            <button 
+              onClick={() => setView("home")}
+              className={cn(
+                "flex-1 md:px-8 py-3 md:py-4 px-4 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
+                view === "home" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
+              )}
+            >
+              <ShieldCheck className="w-4 h-4 md:w-5 md:h-5" />
+              <span className="text-[7px] md:text-[8px] font-black tracking-widest uppercase">Protocol</span>
+            </button>
+          </div>
         </nav>
 
         {/* Footnote */}
         <footer className="py-24 flex flex-col items-center border-t border-neon/10 bg-basalt">
           <p className="text-[10px] uppercase font-black tracking-[0.6em] text-neon/20">
-            HEIST. GLOBAL NETWORK v1.0.4 - FULL SPECTRUM
+            HEIST. GLOBAL NETWORK v1.0.4
           </p>
         </footer>
       </div>
