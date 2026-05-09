@@ -498,7 +498,7 @@ TAGS: tag1, tag2, tag3
             )}
             <button 
               onClick={onSignOut}
-              className="p-4 border border-neon/10 bg-neon/5 hover:bg-neon/10 transition-colors rounded-full"
+              className="p-4 border border-neon/10 bg-neon/5 hover:bg-neon/10 transition-colors"
               title="De-authorize Identity"
             >
               <LayoutGrid className="w-6 h-6 text-neon/60 hover:text-neon" />
@@ -604,8 +604,8 @@ TAGS: tag1, tag2, tag3
                     <div className="flex flex-col items-center">
                       <p className="text-xs font-black text-neon/40 uppercase tracking-[0.8em] mb-12">Foundation Unit</p>
                       <div className="relative group">
-                        <img src={batchedOutfit.base.image_url} className="w-80 h-[480px] object-cover border border-neon/20 group-hover:border-neon/50 transition-all duration-1000 shadow-[0_0_100px_rgba(180,250,50,0.05)]" />
-                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-neon text-basalt px-10 py-5 text-xs font-black uppercase tracking-[0.4em] whitespace-nowrap shadow-2xl">
+                        <img src={batchedOutfit.base.image_url} className="w-80 h-[480px] object-cover border border-[#D3D3D3] bg-white brightness-[0.85] group-hover:border-neon/50 transition-all duration-1000 shadow-[0_0_10px_rgba(211,211,211,0.3)] rounded-none" />
+                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-neon text-basalt px-10 py-5 text-xs font-black uppercase tracking-[0.4em] whitespace-nowrap shadow-2xl rounded-none">
                           Selected Anchor
                         </div>
                       </div>
@@ -613,8 +613,8 @@ TAGS: tag1, tag2, tag3
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
                       {batchedOutfit.matches.map(item => (
-                        <div key={item.id} className="bg-neon/5 border border-neon/10 p-8 flex flex-col items-center hover:border-neon/30 transition-all duration-700">
-                          <img src={item.image_url} className="w-full h-[400px] object-cover mb-8 shadow-xl" />
+                        <div key={item.id} className="bg-white brightness-[0.85] border border-[#D3D3D3] p-8 flex flex-col items-center hover:border-neon/30 transition-all duration-700 shadow-[0_0_10px_rgba(211,211,211,0.3)] rounded-none">
+                          <img src={item.image_url} className="w-full h-[400px] object-cover mb-8 shadow-xl rounded-none" />
                           <p className="text-[10px] font-black text-neon/40 uppercase tracking-[0.5em] mb-3 leading-none italic">{item.brand_name}</p>
                           <h6 className="text-xl font-serif font-black text-neon uppercase mb-4 text-center tracking-tight leading-none">{item.item_name}</h6>
                           <div className="w-12 h-[1px] bg-neon/20 mb-4" />
@@ -641,7 +641,7 @@ TAGS: tag1, tag2, tag3
                     </div>
                   </div>
                 ) : (
-                  <div className="py-40 text-center border-4 border-dashed border-neon/5 rounded-[40px]">
+                  <div className="py-40 text-center border-4 border-dashed border-neon/5">
                     <Sparkles className="w-20 h-20 text-neon/10 mx-auto mb-10" />
                     <h3 className="text-3xl font-serif font-black text-neon/40 mb-6 uppercase tracking-tighter">Outfit Synthesis Engine</h3>
                     <p className="text-neon/30 text-xs md:text-sm uppercase tracking-[0.5em] leading-loose max-w-2xl mx-auto font-bold italic">
@@ -657,9 +657,9 @@ TAGS: tag1, tag2, tag3
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="py-40 flex flex-col items-center justify-center text-center border-4 border-dashed border-neon/5 rounded-[40px] bg-neon/[0.02]"
+                className="py-40 flex flex-col items-center justify-center text-center border-4 border-dashed border-neon/5 bg-neon/[0.02]"
               >
-                <div className="w-32 h-32 bg-neon/10 rounded-full flex items-center justify-center mb-10 border border-neon/30 shadow-[0_0_60px_rgba(180,250,50,0.1)]">
+                <div className="w-32 h-32 bg-neon/10 flex items-center justify-center mb-10 border border-neon/30 shadow-[0_0_60px_rgba(180,250,50,0.1)]">
                   <Camera className="text-neon w-12 h-12" />
                 </div>
                 <h3 className="text-5xl font-serif font-black text-neon mb-6 uppercase tracking-tighter">Optical Aesthetic Scan</h3>
@@ -683,7 +683,7 @@ TAGS: tag1, tag2, tag3
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-20 p-12 bg-neon/[0.03] border border-neon/10 rounded-[20px] shadow-2xl flex flex-col md:flex-row items-center gap-12"
+                    className="mb-20 p-12 bg-white brightness-[0.85] border border-[#D3D3D3] rounded-none shadow-[0_0_10px_rgba(211,211,211,0.3)] flex flex-col md:flex-row items-center gap-12"
                   >
                     <div className="flex-1 space-y-8">
                       <div className="flex items-center gap-4">
@@ -724,29 +724,29 @@ TAGS: tag1, tag2, tag3
                         transition={{ delay: idx * 0.01 }}
                         className="group flex flex-col"
                       >
-                        <div className="w-full aspect-[3/4] bg-neon/10 flex-shrink-0 relative overflow-hidden mb-8 border border-neon/5 group-hover:border-neon/30 transition-all duration-700 shadow-xl">
+                        <div className="w-full aspect-[3/4] bg-white brightness-[0.85] flex-shrink-0 relative overflow-hidden mb-8 border border-[#D3D3D3] group-hover:border-neon shadow-[0_0_10px_rgba(211,211,211,0.3)] transition-all duration-700 rounded-none">
                           <img 
                             src={item.image_url} 
                             alt={item.item_name}
-                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-[1500ms]"
+                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-[1500ms] rounded-none"
                             referrerPolicy="no-referrer"
                           />
-                          <div className="absolute top-4 left-4 bg-basalt/80 backdrop-blur-md text-neon text-[9px] font-black px-3 py-1 tracking-[0.2em] border border-neon/20">
+                          <div className="absolute top-4 left-4 bg-basalt/80 backdrop-blur-md text-neon text-[9px] font-black px-3 py-1 tracking-[0.2em] border border-neon/20 rounded-none">
                             COORD_{Math.round((item.similarity || 0) * 100)}
                           </div>
                           
                           {/* Hover Controls Overlay */}
-                          <div className="absolute inset-0 bg-basalt/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center gap-6 backdrop-blur-sm">
+                          <div className="absolute inset-0 bg-basalt/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center gap-6 backdrop-blur-sm rounded-none">
                             <a 
                               href={item.product_link} 
                               target="_blank" 
-                              className="w-14 h-14 bg-neon text-basalt rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-2xl"
+                              className="w-14 h-14 bg-neon text-basalt rounded-none flex items-center justify-center hover:scale-110 transition-transform shadow-2xl"
                             >
                               <ExternalLink className="w-6 h-6" />
                             </a>
                             <button 
                               onClick={() => handleMatchAndBatch(item)}
-                              className="w-14 h-14 bg-white text-basalt rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-2xl"
+                              className="w-14 h-14 bg-white text-basalt rounded-none flex items-center justify-center hover:scale-110 transition-transform shadow-2xl"
                               title="Synthesis Hub"
                             >
                               <Sparkles className="w-6 h-6" />
@@ -785,8 +785,8 @@ TAGS: tag1, tag2, tag3
       {/* Floating Action / Scanners - Fixed Positioned relative to screen */}
       {activeTab === "recommendations" && (
         <div className="fixed bottom-12 right-12 z-[100]">
-          <label className="w-24 h-24 bg-neon rounded-full shadow-[0_0_50px_rgba(180,250,50,0.4)] flex items-center justify-center cursor-pointer hover:scale-110 transition-all duration-500 active:scale-95 group relative">
-            <div className="absolute inset-0 rounded-full border-2 border-neon animate-ping opacity-20" />
+          <label className="w-24 h-24 bg-neon shadow-[0_0_50px_rgba(180,250,50,0.4)] flex items-center justify-center cursor-pointer hover:scale-110 transition-all duration-500 active:scale-95 group relative">
+            <div className="absolute inset-0 border-2 border-neon animate-ping opacity-20" />
             <Scan className="text-basalt w-10 h-10" />
             <div className="absolute -top-12 right-0 bg-basalt border border-neon/30 px-4 py-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
               <span className="text-[10px] text-neon font-black tracking-[0.3em] uppercase">Atmospheric Scan</span>

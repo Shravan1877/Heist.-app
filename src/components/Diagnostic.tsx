@@ -42,7 +42,7 @@ export default function Diagnostic({ onComplete }: DiagnosticProps) {
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="w-16 h-16 bg-moss rounded-full flex items-center justify-center mb-6"
+          className="w-16 h-16 bg-moss flex items-center justify-center mb-6"
         >
           <Check className="text-neon w-8 h-8" />
         </motion.div>
@@ -69,7 +69,7 @@ export default function Diagnostic({ onComplete }: DiagnosticProps) {
             {Math.round(progress)}%
           </div>
         </div>
-        <div className="h-[4px] w-full bg-neon/10 rounded-full overflow-hidden shadow-[0_0_20px_rgba(180,250,50,0.05)]">
+        <div className="h-[4px] w-full bg-neon/10 overflow-hidden shadow-[0_0_20px_rgba(180,250,50,0.05)]">
           <motion.div 
             className="h-full bg-neon shadow-[0_0_20px_rgba(180,250,50,0.4)]"
             initial={{ width: 0 }}
@@ -110,7 +110,7 @@ export default function Diagnostic({ onComplete }: DiagnosticProps) {
                       {option.text}
                     </span>
                     {answers[currentIndex] === idx && (
-                      <div className="w-3 h-3 rounded-full bg-neon shadow-[0_0_15px_rgba(180,250,50,0.8)] animate-pulse" />
+                      <div className="w-3 h-3 bg-neon shadow-[0_0_15px_rgba(180,250,50,0.8)] animate-pulse" />
                     )}
                   </div>
                   
@@ -139,7 +139,7 @@ export default function Diagnostic({ onComplete }: DiagnosticProps) {
             <div 
               key={i} 
               className={cn(
-                "w-2 h-2 rounded-full transition-all duration-500",
+                "w-2 h-2 transition-all duration-500",
                 i === currentIndex ? "bg-neon scale-150 shadow-[0_0_10px_rgba(180,250,50,0.4)]" : i < currentIndex ? "bg-neon/40" : "bg-neon/5"
               )}
             />

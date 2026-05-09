@@ -83,7 +83,7 @@ app.post('/api/ai/batch', async (req, res) => {
       throw new Error("AI Credentials missing in Vault.");
     }
 
-    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = ai.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
     const result = await model.generateContent(prompt);
     const text = result.response.text();
     
@@ -104,7 +104,7 @@ app.post('/api/ai/vision', async (req, res) => {
       throw new Error("AI Credentials missing in Vault.");
     }
 
-    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = ai.getGenerativeModel({ model: "gemini-3.1-flash-lite-preview" });
     const result = await model.generateContent([
       prompt,
       {

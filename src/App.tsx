@@ -7,8 +7,9 @@ import React, { useState, useEffect } from "react";
 import Diagnostic from "./components/Diagnostic";
 import Vault from "./components/Vault";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, ShieldCheck, LogIn, UserCircle } from "lucide-react";
+import { Sparkles, ShieldCheck, LogIn, UserCircle, Archive, Scan, LayoutGrid } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { cn } from "./lib/utils";
 import { Session } from "@supabase/supabase-js";
 
 export default function App() {
@@ -178,7 +179,7 @@ export default function App() {
   if (loading && !session) {
     return (
       <div className="bg-basalt min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-2 border-neon border-t-transparent rounded-full animate-spin" />
+        <div className="w-12 h-12 border-2 border-neon border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -186,27 +187,7 @@ export default function App() {
   return (
     <div className="bg-basalt min-h-screen text-neon font-sans selection:bg-neon/20 flex flex-col">
       <div className="w-full h-full flex flex-col relative overflow-hidden">
-        {/* Nav */}
-        <header className="h-28 px-12 md:px-24 flex items-center justify-between border-b border-neon/10 bg-basalt/80 backdrop-blur-xl sticky top-0 z-50">
-          <button 
-            onClick={() => setView("home")}
-            className="flex items-center gap-4 group"
-          >
-            <div className="w-10 h-10 bg-neon rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-              <span className="text-basalt text-xs font-black">H.</span>
-            </div>
-            <span className="text-sm tracking-[0.6em] font-black uppercase text-neon group-hover:text-white transition-colors">HEIST.</span>
-          </button>
-          <div className="flex items-center gap-6">
-            <div className="hidden sm:flex items-center gap-2 px-4 py-2 border border-neon/20 rounded-full bg-neon/5">
-              <div className="w-2 h-2 rounded-full bg-neon animate-pulse" />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neon/80">Active Node</p>
-            </div>
-            <ShieldCheck className="w-6 h-6 text-neon/40" />
-          </div>
-        </header>
-
-        <main className="flex-1 flex flex-col min-h-0 bg-basalt relative pt-12 md:pt-0">
+        <main className="flex-1 flex flex-col min-h-0 bg-basalt relative">
           <AnimatePresence mode="wait">
             {view === "home" && (
               <motion.div
@@ -317,7 +298,7 @@ export default function App() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="px-8 py-24 flex flex-col h-full bg-basalt items-center justify-center text-center min-h-[calc(100vh-160px)]"
               >
-                <div className="mb-12 p-8 bg-neon/10 border border-neon/30 rounded-full shadow-[0_0_40px_rgba(180,250,50,0.1)]">
+                <div className="mb-12 p-8 bg-neon/10 border border-neon/30 shadow-[0_0_40px_rgba(180,250,50,0.1)]">
                   <ShieldCheck className="w-12 h-12 text-neon" />
                 </div>
                 <h2 className="text-5xl font-serif font-black text-neon mb-4 uppercase tracking-tighter">Identity Protocol</h2>
@@ -366,7 +347,7 @@ export default function App() {
                     disabled={loading}
                   >
                     {loading ? (
-                      <div className="w-6 h-6 border-2 border-basalt border-t-transparent rounded-full animate-spin" />
+                      <div className="w-6 h-6 border-2 border-basalt border-t-transparent animate-spin" />
                     ) : (
                       <>
                         <LogIn className="w-5 h-5" />
@@ -405,8 +386,44 @@ export default function App() {
           </AnimatePresence>
         </main>
         
+        {/* Bottom Navigation Dock */}
+        <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 p-2 bg-basalt/60 backdrop-blur-2xl border border-limestone/40 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+          <button 
+            onClick={() => setView("vault")}
+            className={cn(
+              "px-8 py-4 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
+              view === "vault" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
+            )}
+          >
+            <Archive className="w-5 h-5" />
+            <span className="text-[8px] font-black tracking-widest uppercase">Archive</span>
+          </button>
+          
+          <button 
+            onClick={() => setView("diagnostic")}
+            className={cn(
+              "px-8 py-4 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
+              view === "diagnostic" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
+            )}
+          >
+            <Scan className="w-5 h-5" />
+            <span className="text-[8px] font-black tracking-widest uppercase">Scan</span>
+          </button>
+
+          <button 
+            onClick={() => setView("home")}
+            className={cn(
+              "px-8 py-4 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
+              view === "home" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
+            )}
+          >
+            <ShieldCheck className="w-5 h-5" />
+            <span className="text-[8px] font-black tracking-widest uppercase">Protocol</span>
+          </button>
+        </nav>
+
         {/* Footnote */}
-        <footer className="py-12 flex flex-col items-center border-t border-neon/10 bg-basalt">
+        <footer className="py-24 flex flex-col items-center border-t border-neon/10 bg-basalt">
           <p className="text-[10px] uppercase font-black tracking-[0.6em] text-neon/20">
             HEIST. GLOBAL NETWORK v1.0.4 - FULL SPECTRUM
           </p>
