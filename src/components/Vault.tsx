@@ -35,7 +35,7 @@ type SortOrder = "recommended" | "price_asc" | "price_desc";
 
 const CATEGORIES = [
   "all", "co-ords", "suits", "shirt", "pant", "shorts", 
-  "t-shirt", "sweatshirt/hoodie", "jackets/coats", "footwear", "jewlery"
+  "t-shirt", "sweatshirt/hoodie", "jackets/coats", "footwear", "jewelry"
 ];
 
 interface BatchedOutfit {
@@ -238,11 +238,11 @@ export default function Vault({ userVector, onSignOut, onRetakeQuiz }: VaultProp
     try {
       const heroCategory = (item.category || "").toLowerCase();
       
-      const CAT_TOPS = ["shirt", "t-shirt", "sweatshirt/hoodie", "jackets/coats"];
-      const CAT_BOTTOMS = ["pant", "shorts"];
-      const CAT_FOOTWEAR = ["footwear"];
-      const CAT_SETS = ["co-ords", "suits"];
-      const CAT_ACCESSORIES = ["jewlery"];
+      const CAT_TOPS = ["shirt", "t-shirt", "sweatshirt/hoodie", "jackets/coats", "tops", "upper"];
+      const CAT_BOTTOMS = ["pant", "shorts", "bottoms", "lower", "trousers"];
+      const CAT_FOOTWEAR = ["footwear", "shoes", "sneakers", "boots"];
+      const CAT_SETS = ["co-ords", "suits", "set", "outfit"];
+      const CAT_ACCESSORIES = ["jewelry", "jewlery", "accessories", "jewellery", "cap", "bag"];
 
       const DESIGN_TAGS = ["abstract", "acid", "argyle", "bengal", "block", "blocked", "camo", "check", "collar", "color", "contrast", "detailing", "distressed", "embossed", "embroidery", "floral", "geometric", "graphics", "heathered", "horizontal", "ink", "intarsia", "jacquard", "marled", "melange", "micro", "motif", "none", "ombre", "patchwork", "pattern", "patterned", "pinstripe", "piping", "plaid", "print", "screen", "solid", "stitching", "stripe", "stripes", "striping", "textured", "tweed", "vertical", "wash", "weave"];
 
@@ -466,53 +466,53 @@ TAGS: tag1, tag2, tag3
   };
 
   return (
-    <div className="flex flex-col h-full bg-basalt">
+    <div className="flex flex-col h-full bg-basalt min-h-screen">
       {/* Dynamic Header */}
-      <div className="px-8 pt-8 pb-4">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-4xl font-serif font-black text-neon tracking-tighter uppercase">
-            {activeTab === "recommendations" ? "Your DNA" : "Vision Scan"}
+      <div className="px-12 md:px-24 pt-16 pb-8 border-b border-neon/5 bg-basalt/30 backdrop-blur-sm">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-12 mb-16">
+          <h2 className="text-6xl md:text-8xl font-serif font-black text-neon tracking-tighter uppercase leading-none">
+            {activeTab === "recommendations" ? "Atmosphere" : (activeTab === "batch" ? "Synthesis" : "Vision Scan")}
           </h2>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-10">
             {userProfile && (
-              <div className="flex gap-4 mr-4 items-center">
+              <div className="flex gap-12 items-center">
                 <button 
                   onClick={onRetakeQuiz}
-                  className="hidden md:block px-3 py-1 border border-neon/30 text-[7px] text-neon uppercase tracking-[0.2em] hover:bg-neon hover:text-basalt transition-all"
+                  className="hidden xl:block px-6 py-3 border border-neon/30 text-[10px] text-neon uppercase tracking-[0.4em] hover:bg-neon hover:text-basalt transition-all duration-500 font-black shadow-[0_0_20px_rgba(180,250,50,0.05)]"
                 >
-                  Re-calibrate DNA
+                  Re-calibrate DNA Map
                 </button>
-                <div className="hidden lg:block text-right pr-4 border-r border-limestone/10">
-                  <p className="text-[7px] text-limestone uppercase tracking-widest leading-none mb-1">Identity Verified</p>
-                  <p className="text-[9px] font-black text-neon truncate max-w-[120px]">{userProfile.full_name || userProfile.email.split('@')[0]}</p>
+                <div className="hidden lg:block text-right pr-12 border-r border-neon/10">
+                  <p className="text-[9px] text-neon/40 uppercase tracking-[0.4em] leading-none mb-3 font-black">Identity Verified</p>
+                  <p className="text-sm font-black text-neon truncate max-w-[200px] tracking-tight">{userProfile.full_name || userProfile.email.split('@')[0]}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[7px] text-limestone uppercase tracking-widest leading-none mb-1">Scan</p>
-                  <p className="text-[10px] font-mono font-black text-neon leading-none">{isAdmin ? "∞" : userProfile.scan_credits}</p>
+                  <p className="text-[9px] text-neon/40 uppercase tracking-[0.4em] leading-none mb-3 font-black">Scan Credits</p>
+                  <p className="text-xl font-mono font-black text-neon leading-none">{isAdmin ? "∞" : userProfile.scan_credits}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[7px] text-limestone uppercase tracking-widest leading-none mb-1">Batch</p>
-                  <p className="text-[10px] font-mono font-black text-neon leading-none">{isAdmin ? "∞" : userProfile.batch_credits}</p>
+                  <p className="text-[9px] text-neon/40 uppercase tracking-[0.4em] leading-none mb-3 font-black">Batch Credits</p>
+                  <p className="text-xl font-mono font-black text-neon leading-none">{isAdmin ? "∞" : userProfile.batch_credits}</p>
                 </div>
               </div>
             )}
             <button 
               onClick={onSignOut}
-              className="p-2 border border-limestone/20 bg-moss/20 hover:bg-neon/10 transition-colors"
+              className="p-4 border border-neon/10 bg-neon/5 hover:bg-neon/10 transition-colors rounded-full"
               title="De-authorize Identity"
             >
-              <LayoutGrid className="w-4 h-4 text-neon/40 hover:text-neon" />
+              <LayoutGrid className="w-6 h-6 text-neon/60 hover:text-neon" />
             </button>
           </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex border-b border-limestone/10 mb-8">
+        {/* Tab Switcher - Centered and Wider */}
+        <div className="flex max-w-4xl mx-auto border-b border-neon/10 mb-12">
           <button
             onClick={() => setActiveTab("recommendations")}
             className={cn(
-              "flex-1 pb-4 text-[10px] font-bold tracking-[0.2em] uppercase transition-all duration-300",
-              activeTab === "recommendations" ? "text-neon border-b-2 border-neon" : "text-limestone"
+              "flex-1 pb-6 text-xs font-black tracking-[0.5em] uppercase transition-all duration-500",
+              activeTab === "recommendations" ? "text-neon border-b-4 border-neon" : "text-neon/20 hover:text-neon/50"
             )}
           >
             DNA Match
@@ -520,36 +520,36 @@ TAGS: tag1, tag2, tag3
           <button
             onClick={() => setActiveTab("batch")}
             className={cn(
-              "flex-1 pb-4 text-[10px] font-bold tracking-[0.2em] uppercase transition-all duration-300",
-              activeTab === "batch" ? "text-neon border-b-2 border-neon" : "text-limestone"
+              "flex-1 pb-6 text-xs font-black tracking-[0.5em] uppercase transition-all duration-500",
+              activeTab === "batch" ? "text-neon border-b-4 border-neon" : "text-neon/20 hover:text-neon/50"
             )}
           >
-            Batch
+            Batch Synthesis
           </button>
           <button
             onClick={() => setActiveTab("vision")}
             className={cn(
-              "flex-1 pb-4 text-[10px] font-bold tracking-[0.2em] uppercase transition-all duration-300",
-              activeTab === "vision" ? "text-neon border-b-2 border-neon" : "text-limestone"
+              "flex-1 pb-6 text-xs font-black tracking-[0.5em] uppercase transition-all duration-500",
+              activeTab === "vision" ? "text-neon border-b-4 border-neon" : "text-neon/20 hover:text-neon/50"
             )}
           >
-            Vision Results
+            Vision Output
           </button>
         </div>
 
-        {/* Global Controls: Filters & Sort */}
+        {/* Global Controls: Filters & Sort - Scaled Up */}
         {(activeTab === "recommendations" || (activeTab === "vision" && visionVector)) && (
-          <div className="space-y-4 mb-8">
-            <div className="flex overflow-x-auto no-scrollbar gap-2 pb-2">
+          <div className="max-w-7xl mx-auto space-y-8 mb-12">
+            <div className="flex flex-wrap justify-center gap-4">
               {CATEGORIES.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   className={cn(
-                    "px-4 py-2 text-[8px] font-black uppercase tracking-widest whitespace-nowrap border transition-all",
+                    "px-8 py-3 text-[10px] font-black uppercase tracking-[0.3em] border transition-all duration-500",
                     selectedCategory === cat 
-                      ? "bg-neon text-basalt border-neon" 
-                      : "text-limestone/60 border-limestone/10 hover:border-limestone/40"
+                      ? "bg-neon text-basalt border-neon shadow-[0_0_20px_rgba(180,250,50,0.2)]" 
+                      : "text-neon/40 border-neon/10 hover:border-neon/40"
                   )}
                 >
                   {cat}
@@ -557,20 +557,20 @@ TAGS: tag1, tag2, tag3
               ))}
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex flex-wrap justify-center gap-6">
               {[
-                { id: "recommended", label: "Monarchy Sort" },
-                { id: "price_asc", label: "Price Low-High" },
-                { id: "price_desc", label: "Price High-Low" }
+                { id: "recommended", label: "Neural Proximity Sort" },
+                { id: "price_asc", label: "Value Calibration (Low-High)" },
+                { id: "price_desc", label: "Value Calibration (High-Low)" }
               ].map(sort => (
                 <button
                   key={sort.id}
                   onClick={() => setSortOrder(sort.id as SortOrder)}
                   className={cn(
-                    "flex-1 py-3 text-[7px] font-bold uppercase tracking-widest border transition-all",
+                    "px-10 py-4 text-[9px] font-black uppercase tracking-[0.4em] border transition-all duration-500",
                     sortOrder === sort.id 
-                      ? "bg-moss/40 text-neon border-neon/30" 
-                      : "text-limestone/40 border-limestone/5 hover:border-limestone/20"
+                      ? "bg-neon/10 text-neon border-neon/40" 
+                      : "text-neon/20 border-neon/5 hover:border-neon/20"
                   )}
                 >
                   {sort.label}
@@ -581,192 +581,216 @@ TAGS: tag1, tag2, tag3
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-8 pb-12 custom-scrollbar">
-        <AnimatePresence mode="wait">
-          {activeTab === "batch" ? (
-            <motion.div
-              key="batch-view"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-8"
-            >
-              {isBatching ? (
-                <div className="py-20 text-center space-y-4">
-                  <div className="flex justify-center">
-                    <RefreshCcw className="w-8 h-8 text-neon animate-spin" />
+      <div className="flex-1 overflow-y-auto px-12 md:px-24 py-20 bg-basalt">
+        <div className="max-w-[1600px] mx-auto">
+          <AnimatePresence mode="wait">
+            {activeTab === "batch" ? (
+              <motion.div
+                key="batch-view"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-16"
+              >
+                {isBatching ? (
+                  <div className="py-40 text-center space-y-10">
+                    <div className="flex justify-center">
+                      <RefreshCcw className="w-16 h-16 text-neon animate-spin" />
+                    </div>
+                    <p className="text-neon text-sm uppercase tracking-[1em] font-black">Neural Link: Calibrating Style Batch...</p>
                   </div>
-                  <p className="text-neon text-[10px] uppercase tracking-[0.3em] font-black">Calibrating Style Batch...</p>
-                </div>
-              ) : batchedOutfit ? (
-                <div className="space-y-12">
-                  <div className="text-center">
-                    <p className="text-[10px] font-black text-limestone uppercase tracking-[0.4em] mb-4">Curated Foundation</p>
-                    <div className="inline-block relative">
-                      <img src={batchedOutfit.base.image_url} className="w-48 h-64 object-cover border border-neon/30" />
-                      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-neon text-basalt px-4 py-2 text-[10px] font-black uppercase whitespace-nowrap">
-                        Primary Selection
+                ) : batchedOutfit ? (
+                  <div className="space-y-24">
+                    <div className="flex flex-col items-center">
+                      <p className="text-xs font-black text-neon/40 uppercase tracking-[0.8em] mb-12">Foundation Unit</p>
+                      <div className="relative group">
+                        <img src={batchedOutfit.base.image_url} className="w-80 h-[480px] object-cover border border-neon/20 group-hover:border-neon/50 transition-all duration-1000 shadow-[0_0_100px_rgba(180,250,50,0.05)]" />
+                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-neon text-basalt px-10 py-5 text-xs font-black uppercase tracking-[0.4em] whitespace-nowrap shadow-2xl">
+                          Selected Anchor
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    {batchedOutfit.matches.map(item => (
-                      <div key={item.id} className="bg-moss/10 border border-limestone/10 p-4">
-                        <img src={item.image_url} className="w-full h-40 object-cover mb-4" />
-                        <p className="text-[8px] font-black text-limestone uppercase mb-1">{item.brand_name}</p>
-                        <h6 className="text-[10px] font-serif font-black text-neon uppercase mb-2">{item.item_name}</h6>
-                        <p className="text-[9px] font-mono text-neon/60">{item.category}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                      {batchedOutfit.matches.map(item => (
+                        <div key={item.id} className="bg-neon/5 border border-neon/10 p-8 flex flex-col items-center hover:border-neon/30 transition-all duration-700">
+                          <img src={item.image_url} className="w-full h-[400px] object-cover mb-8 shadow-xl" />
+                          <p className="text-[10px] font-black text-neon/40 uppercase tracking-[0.5em] mb-3 leading-none italic">{item.brand_name}</p>
+                          <h6 className="text-xl font-serif font-black text-neon uppercase mb-4 text-center tracking-tight leading-none">{item.item_name}</h6>
+                          <div className="w-12 h-[1px] bg-neon/20 mb-4" />
+                          <p className="text-[11px] font-mono text-neon/60 uppercase tracking-widest">{item.category}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row justify-center gap-10 mt-20">
+                      <button 
+                        onClick={() => handleMatchAndBatch(batchedOutfit.base)}
+                        className="px-16 py-8 border-2 border-neon text-neon text-xs font-black uppercase tracking-[0.6em] hover:bg-neon hover:text-basalt transition-all duration-700 shadow-[0_0_40px_rgba(180,250,50,0.1)] flex items-center gap-4"
+                        disabled={isBatching}
+                      >
+                        <RefreshCcw className={cn("w-5 h-5", isBatching && "animate-spin")} />
+                        Recalculate Combo
+                      </button>
+                      <button 
+                        onClick={() => setBatchedOutfit(null)}
+                        className="px-16 py-8 border-2 border-neon/20 text-neon/40 text-xs font-black uppercase tracking-[0.6em] hover:bg-neon/5 hover:text-neon transition-all duration-700"
+                      >
+                        Reset Matrix
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-40 text-center border-4 border-dashed border-neon/5 rounded-[40px]">
+                    <Sparkles className="w-20 h-20 text-neon/10 mx-auto mb-10" />
+                    <h3 className="text-3xl font-serif font-black text-neon/40 mb-6 uppercase tracking-tighter">Outfit Synthesis Engine</h3>
+                    <p className="text-neon/30 text-xs md:text-sm uppercase tracking-[0.5em] leading-loose max-w-2xl mx-auto font-bold italic">
+                      Select a 'Hero' from your vault. <br />
+                      AI neural matching will architect a complete 3-piece atmosphere.
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            ) : activeTab === "vision" && !visionVector && !isVisionScanning ? (
+              <motion.div
+                key="vision-upload"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="py-40 flex flex-col items-center justify-center text-center border-4 border-dashed border-neon/5 rounded-[40px] bg-neon/[0.02]"
+              >
+                <div className="w-32 h-32 bg-neon/10 rounded-full flex items-center justify-center mb-10 border border-neon/30 shadow-[0_0_60px_rgba(180,250,50,0.1)]">
+                  <Camera className="text-neon w-12 h-12" />
+                </div>
+                <h3 className="text-5xl font-serif font-black text-neon mb-6 uppercase tracking-tighter">Optical Aesthetic Scan</h3>
+                <p className="text-limestone text-xs md:text-sm uppercase tracking-[0.5em] font-bold leading-loose max-w-2xl mb-16 italic">
+                  Analyzing vibes, not patterns. Upload visual data to isolate 100 synchronized items across our global network.
+                </p>
+                <label className="bg-neon text-basalt px-16 py-8 font-black text-xs uppercase tracking-[1em] cursor-pointer hover:bg-white transition-all duration-1000 shadow-2xl">
+                  Connect Optics
+                  <input type="file" accept="image/*" className="hidden" onChange={handleVisionScan} />
+                </label>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="items-grid"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="space-y-16"
+              >
+                {/* Profile Context for DNA Match */}
+                {activeTab === "recommendations" && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-20 p-12 bg-neon/[0.03] border border-neon/10 rounded-[20px] shadow-2xl flex flex-col md:flex-row items-center gap-12"
+                  >
+                    <div className="flex-1 space-y-8">
+                      <div className="flex items-center gap-4">
+                        <div className="w-3 h-3 rounded-full bg-neon animate-pulse" />
+                        <span className="text-xs font-black text-neon tracking-[0.6em] uppercase">Neural Signal Latency: 4ms</span>
                       </div>
+                      <h4 className="text-6xl md:text-8xl font-serif font-black text-white uppercase tracking-tighter leading-none">{identity.name}</h4>
+                      <p className="text-sm md:text-base text-neon/40 uppercase tracking-[0.4em] leading-relaxed font-bold italic max-w-3xl">
+                        Vault parameters optimized. Dominant neural pillar: <span className="text-neon">{identity.primary}</span>. Secondary nodes shifting between <span className="text-neon">{identity.secondary}</span>. 
+                      </p>
+                    </div>
+                    <div className="flex gap-16 border-l border-neon/10 pl-16">
+                      <div className="text-center">
+                        <p className="text-[10px] text-neon/30 uppercase tracking-[0.5em] font-black mb-4 italic">Primary</p>
+                        <p className="text-2xl font-black text-neon uppercase tracking-tighter">{identity.primary}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[10px] text-neon/30 uppercase tracking-[0.5em] font-black mb-4 italic">Secondary</p>
+                        <p className="text-2xl font-black text-neon uppercase tracking-tighter">{identity.secondary}</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {loading && allItems.length === 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                      <div key={i} className="h-96 bg-neon/5 animate-pulse border border-neon/10 rounded-xl" />
                     ))}
                   </div>
+                ) : displayedItems.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-10 gap-y-20">
+                    {displayedItems.map((item, idx) => (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.01 }}
+                        className="group flex flex-col"
+                      >
+                        <div className="w-full aspect-[3/4] bg-neon/10 flex-shrink-0 relative overflow-hidden mb-8 border border-neon/5 group-hover:border-neon/30 transition-all duration-700 shadow-xl">
+                          <img 
+                            src={item.image_url} 
+                            alt={item.item_name}
+                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-[1500ms]"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="absolute top-4 left-4 bg-basalt/80 backdrop-blur-md text-neon text-[9px] font-black px-3 py-1 tracking-[0.2em] border border-neon/20">
+                            COORD_{Math.round((item.similarity || 0) * 100)}
+                          </div>
+                          
+                          {/* Hover Controls Overlay */}
+                          <div className="absolute inset-0 bg-basalt/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center gap-6 backdrop-blur-sm">
+                            <a 
+                              href={item.product_link} 
+                              target="_blank" 
+                              className="w-14 h-14 bg-neon text-basalt rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-2xl"
+                            >
+                              <ExternalLink className="w-6 h-6" />
+                            </a>
+                            <button 
+                              onClick={() => handleMatchAndBatch(item)}
+                              className="w-14 h-14 bg-white text-basalt rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-2xl"
+                              title="Synthesis Hub"
+                            >
+                              <Sparkles className="w-6 h-6" />
+                            </button>
+                          </div>
+                        </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button 
-                      onClick={() => handleMatchAndBatch(batchedOutfit.base)}
-                      className="flex items-center justify-center gap-3 border border-neon text-neon py-4 text-[10px] font-black uppercase tracking-widest hover:bg-neon hover:text-basalt transition-all group"
-                      disabled={isBatching}
-                    >
-                      <RefreshCcw className={cn("w-4 h-4", isBatching && "animate-spin")} />
-                      Regenerate Combo
-                    </button>
-                    <button 
-                      onClick={() => setBatchedOutfit(null)}
-                      className="border border-limestone/30 text-limestone py-4 text-[10px] font-black uppercase tracking-widest hover:bg-limestone/10 transition-all"
-                    >
-                      Reset Pipeline
-                    </button>
+                        <div className="flex flex-col items-center text-center">
+                          <p className="text-[10px] font-black text-neon/40 uppercase tracking-[0.6em] mb-3 italic">{item.brand_name || "Nexus Unit"}</p>
+                          <h5 className="text-xl md:text-2xl font-serif font-black text-neon leading-none tracking-tighter mb-4 uppercase">{item.item_name}</h5>
+                          <div className="flex flex-col items-center gap-4">
+                            <span className="text-lg font-mono text-neon font-bold tracking-tighter">
+                              {formatCurrency(item.price)}
+                            </span>
+                            <div className="w-10 h-[1px] bg-neon/10 group-hover:w-full transition-all duration-1000" />
+                            <p className="text-[10px] text-neon/20 uppercase tracking-[0.3em] font-black">{item.category}</p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
-                </div>
-              ) : (
-                <div className="py-20 text-center border-2 border-dashed border-limestone/10">
-                  <Sparkles className="w-8 h-8 text-limestone/20 mx-auto mb-4" />
-                  <p className="text-limestone text-[9px] uppercase tracking-widest leading-loose max-w-[280px] mx-auto">
-                    The ultimate combo. Select a 'Hero' item and we’ll instantly build a 3-piece Batch for you using AI color theory and texture matching.
-                  </p>
-                </div>
-              )}
-            </motion.div>
-          ) : activeTab === "vision" && !visionVector && !isVisionScanning ? (
-            <motion.div
-              key="vision-upload"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="py-20 flex flex-col items-center justify-center text-center border-2 border-dashed border-limestone/10 rounded-lg"
-            >
-              <div className="w-16 h-16 bg-graphite rounded-full flex items-center justify-center mb-6 shadow-neon/20 shadow-lg">
-                <Camera className="text-neon w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-serif font-black text-neon mb-2 uppercase tracking-tighter">Aesthetic Scan</h3>
-              <p className="text-limestone text-[9px] uppercase tracking-widest leading-loose max-w-[260px] mb-8">
-                Curating vibes, not clones. Upload any photo to find 100 pieces with the same atmosphere as your inspiration.
-              </p>
-              <label className="bg-neon text-basalt px-8 py-4 font-black text-[10px] uppercase tracking-widest cursor-pointer hover:bg-white transition-colors">
-                Select Hardware
-                <input type="file" accept="image/*" className="hidden" onChange={handleVisionScan} />
-              </label>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="items-grid"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="space-y-4"
-            >
-              {/* Profile Context for DNA Match */}
-              {activeTab === "recommendations" && (
-                <div className="mb-8 p-6 bg-moss/20 border border-limestone/10">
-                  <p className="text-[9px] text-limestone/60 uppercase tracking-widest leading-relaxed mb-4 italic">
-                    This is your personal vault. We prioritize your Majority Pillar to show you 100 items that mathematically fit your style archetype.
-                  </p>
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="text-[9px] font-bold text-neon tracking-widest uppercase">Identity Profile</span>
-                    <Sparkles className="w-3 h-3 text-neon/40" />
-                  </div>
-                  <h4 className="text-2xl font-serif font-black text-white uppercase tracking-tighter mb-2">{identity.name}</h4>
-                  <div className="flex gap-4">
-                    <div className="text-[9px] text-limestone uppercase tracking-tighter">
-                      PRM: <span className="text-neon">{identity.primary}</span>
-                    </div>
-                    <div className="text-[9px] text-limestone uppercase tracking-tighter">
-                      SEC: <span className="text-neon">{identity.secondary}</span>
+                ) : (
+                  <div className="py-40 text-center space-y-10">
+                    <p className="text-neon/30 text-2xl uppercase tracking-[1em] italic font-black">{error || "Signal Exhausted. Vault Empty."}</p>
+                    <div className="flex justify-center">
+                      <RefreshCcw className="w-12 h-12 text-neon/10 animate-spin-slow" />
                     </div>
                   </div>
-                </div>
-              )}
-
-              {loading && allItems.length === 0 ? (
-                <div className="space-y-4">
-                  {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="h-40 bg-moss/10 animate-pulse border border-limestone/5" />
-                  ))}
-                </div>
-              ) : displayedItems.length > 0 ? (
-                <div className="grid gap-4">
-                  {displayedItems.map((item, idx) => (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.03 }}
-                      className="group bg-moss/5 border border-limestone/10 flex hover:border-limestone/40 transition-all duration-300"
-                    >
-                      <div className="w-24 h-32 bg-basalt flex-shrink-0 relative">
-                        <img 
-                          src={item.image_url} 
-                          alt={item.item_name}
-                          className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="absolute bottom-1 right-1 bg-neon text-basalt text-[7px] font-mono font-black px-1">
-                          {Math.round((item.similarity || 0) * 100)}%
-                        </div>
-                      </div>
-                      <div className="p-4 flex flex-col justify-between flex-1">
-                        <div>
-                          <p className="text-[8px] font-black text-limestone uppercase tracking-widest leading-none mb-1">{item.brand_name}</p>
-                          <h5 className="text-sm font-serif font-black text-neon leading-none tracking-tighter mb-2">{item.item_name}</h5>
-                        </div>
-                        <div className="flex justify-between items-end">
-                          <span className="text-xs font-mono text-neon font-black tracking-tighter">
-                            {formatCurrency(item.price)}
-                          </span>
-                          <a 
-                            href={item.product_link} 
-                            target="_blank" 
-                            className="bg-graphite p-2 text-neon hover:bg-neon hover:text-basalt transition-colors"
-                          >
-                            <ChevronRight className="w-3 h-3" />
-                          </a>
-                          <button 
-                            onClick={() => handleMatchAndBatch(item)}
-                            className="bg-neon/10 p-2 text-neon hover:bg-neon hover:text-basalt transition-colors border border-neon/20 ml-2"
-                            title="Match & Batch"
-                          >
-                            <Sparkles className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-20 text-center">
-                  <p className="text-limestone text-[10px] uppercase tracking-widest italic">{error || "Vault is Empty"}</p>
-                  <RefreshCcw className="w-4 h-4 text-limestone/20 mx-auto mt-4" />
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
-      {/* Floating Action for Vision Trigger on DNA Page */}
+      {/* Floating Action / Scanners - Fixed Positioned relative to screen */}
       {activeTab === "recommendations" && (
-        <div className="absolute bottom-24 right-4">
-          <label className="w-12 h-12 bg-neon rounded-full shadow-xl flex items-center justify-center cursor-pointer hover:scale-110 transition-transform active:scale-95">
-            <Scan className="text-basalt w-5 h-5" />
+        <div className="fixed bottom-12 right-12 z-[100]">
+          <label className="w-24 h-24 bg-neon rounded-full shadow-[0_0_50px_rgba(180,250,50,0.4)] flex items-center justify-center cursor-pointer hover:scale-110 transition-all duration-500 active:scale-95 group relative">
+            <div className="absolute inset-0 rounded-full border-2 border-neon animate-ping opacity-20" />
+            <Scan className="text-basalt w-10 h-10" />
+            <div className="absolute -top-12 right-0 bg-basalt border border-neon/30 px-4 py-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              <span className="text-[10px] text-neon font-black tracking-[0.3em] uppercase">Atmospheric Scan</span>
+            </div>
             <input type="file" accept="image/*" className="hidden" onChange={handleVisionScan} />
           </label>
         </div>

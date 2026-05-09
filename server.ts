@@ -4,7 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 dotenv.config();
 
@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Gemini AI Setup (Server-side)
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY || "" });
+const ai = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY || "");
 
 // Supabase Server Client (Prefer Service Role Key for global resets)
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -82,12 +82,11 @@ app.post('/api/ai/batch', async (req, res) => {
       throw new Error("AI Credentials missing in Vault.");
     }
 
-    const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: [{ parts: [{ text: prompt }] }]
-    });
+    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
     
-    res.json({ text: result.text });
+    res.json({ text });
   } catch (err: any) {
     console.error("AI Batch Error:", err);
     res.status(500).json({ error: err.message || "Internal AI Error" });
@@ -104,19 +103,20 @@ app.post('/api/ai/vision', async (req, res) => {
       throw new Error("AI Credentials missing in Vault.");
     }
 
-    const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: [
-        {
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType: mimeType || "image/jpeg", data: image } }
-          ]
+    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          mimeType: mimeType || "image/jpeg",
+          data: image
         }
-      ]
-    });
+      }
+    ]);
 
-    res.json({ text: result.text });
+    const text = result.response.text();
+
+    res.json({ text });
   } catch (err: any) {
     console.error("AI Vision Error:", err);
     res.status(500).json({ error: err.message || "Internal AI Vision Error" });
