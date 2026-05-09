@@ -65,10 +65,13 @@ export default function App() {
     }
 
     // Simulate high-end calculation delay
+    setLoading(true);
     setTimeout(() => {
+      setLoading(false);
       if (session) {
         setView("vault");
       } else {
+        setAuthMode("signup"); // Default to signup after quiz
         setView("auth_required");
       }
     }, 2500);
@@ -87,37 +90,54 @@ export default function App() {
     setLoading(true);
 
     try {
+      console.log(`[HEIST] Auth attempt (${authMode}): ${email}`);
       if (authMode === "signup") {
-        // Enforce unique username check
+        // Uniquness check (Handle gracefully if RLS blocks)
         if (username) {
-          const { data: existing } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('full_name', username)
-            .maybeSingle();
-          if (existing) {
-            setAuthError("This Identity String is already registered in the Vault.");
-            setLoading(false);
-            return;
+          try {
+            const { data: existing, error: checkError } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('full_name', username)
+              .maybeSingle();
+            
+            if (checkError) {
+              console.warn("[HEIST] Alias check bypassed due to RLS/Node connectivity.");
+            } else if (existing) {
+              setAuthError("This Identity Alias is already claimed.");
+              setLoading(false);
+              return;
+            }
+          } catch (e) {
+            console.warn("[HEIST] Alias check failed, proceeding with signup anyway.");
           }
         }
 
-        const { data, error } = await supabase.auth.signUp({ 
+        const signupData = {
           email, 
           password,
           options: {
-            emailRedirectTo: window.location.origin,
             data: {
               full_name: username,
               style_dna: userVector || [0.25, 0.25, 0.25, 0.25]
             }
           }
-        });
-        if (error) throw error;
+        };
+
+        console.log("[HEIST] Registering new neural node...");
+        const { data, error } = await supabase.auth.signUp(signupData);
+        
+        if (error) {
+          console.error("[HEIST] Signup Failure:", error);
+          // If the error is about database saving, try once more without metadata if needed? 
+          // No, better to show the specific error.
+          throw error;
+        }
         
         if (data.user && !data.session) {
-          setAuthError("Identity Request Received. Please check your email to verify your DNA map.");
+          setAuthError("Identity Request Sent. Verify your DNA via email link.");
         } else if (data.session) {
+          console.log("[HEIST] Identity verified. Synchronizing vault...");
           setSession(data.session);
           if (userVector) setView("vault");
         }
@@ -126,7 +146,7 @@ export default function App() {
         if (error) throw error;
         if (data.session) {
           setSession(data.session);
-          // Fetch DNA vector after sign in from style_dna column
+          // Fetch DNA vector
           const { data: profile } = await supabase.from("profiles").select("style_dna").eq("id", data.session.user.id).single();
           if (profile?.style_dna) {
             const vector = typeof profile.style_dna === "string" ? JSON.parse(profile.style_dna) : profile.style_dna;
@@ -136,7 +156,13 @@ export default function App() {
         }
       }
     } catch (err: any) {
-      setAuthError(err.message);
+      console.error("[HEIST] Auth Engine Error:", err);
+      // Clean up common Supabase error messages
+      let displayMsg = err.message || "Network node timeout.";
+      if (displayMsg.includes("database error saving new user")) {
+        displayMsg = "Database Integrity Failure: Your identity coordinates could not be saved. Contact System Admin.";
+      }
+      setAuthError(displayMsg);
     } finally {
       setLoading(false);
     }
@@ -301,9 +327,14 @@ export default function App() {
                 <div className="mb-12 p-8 bg-neon/10 border border-neon/30 shadow-[0_0_40px_rgba(180,250,50,0.1)]">
                   <ShieldCheck className="w-12 h-12 text-neon" />
                 </div>
-                <h2 className="text-4xl sm:text-5xl font-serif font-black text-neon mb-4 uppercase tracking-tighter">Vault Access</h2>
-                <p className="text-limestone text-[10px] md:text-xs uppercase tracking-[0.4em] leading-loose mb-16 max-w-md">
-                  DNA mapping verified. To unlock the vault and access curated results, synchronize your identity coordinates.
+                <h2 className="text-4xl sm:text-5xl font-serif font-black text-neon mb-4 uppercase tracking-tighter">
+                  {userVector ? "Identity Encoded" : (authMode === "signup" ? "New Identity" : "Vault Sync")}
+                </h2>
+                <p className="text-limestone text-[10px] md:text-xs uppercase tracking-[0.4em] leading-loose mb-16 max-w-sm mx-auto">
+                  {userVector 
+                    ? "DNA mapping complete. Register your account to unlock your personalized Vault results."
+                    : "Access the world's most exclusive stylistic neural network. Synchronize your coordinates to proceed."
+                  }
                 </p>
 
                 <form onSubmit={handleEmailAuth} className="w-full max-w-md space-y-6 mb-12">
@@ -311,7 +342,7 @@ export default function App() {
                     <div className="space-y-1">
                       <input 
                         type="text" 
-                        placeholder="AUTHENTICATION ALIAS"
+                        placeholder="IDENTITY ALIAS (USERNAME)"
                         required
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
@@ -339,7 +370,13 @@ export default function App() {
                       className="w-full bg-neon/5 border border-neon/10 p-6 text-xs font-mono text-neon placeholder:text-neon/20 focus:border-neon outline-none transition-all uppercase tracking-widest"
                     />
                   </div>
-                  {authError && <p className="text-[10px] text-red-500 uppercase font-black tracking-widest">{authError}</p>}
+                  {authError && (
+                    <div className="p-4 bg-red-500/10 border border-red-500/20">
+                      <p className="text-[10px] text-red-500 uppercase font-black tracking-widest leading-relaxed">
+                        SYSTEM ERROR: {authError}
+                      </p>
+                    </div>
+                  )}
                   
                   <button
                     type="submit"
@@ -363,7 +400,7 @@ export default function App() {
                   onClick={() => setAuthMode(authMode === "signin" ? "signup" : "signin")}
                   className="text-neon/40 text-[10px] uppercase font-black tracking-[0.4em] hover:text-neon transition-colors"
                 >
-                  {authMode === "signin" ? "NEW USER? INITIALIZE" : "ALREADY REGISTERED? SYNC"}
+                  {authMode === "signin" ? "NEW USER? CREATE IDENTITY" : "ALREADY REGISTERED? SYNC MATRIX"}
                 </button>
               </motion.div>
             )}
