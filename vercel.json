@@ -14,7 +14,6 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/server.ts" },
     { "source": "/auth/(.*)", "destination": "/server.ts" },
-    { "source": "/((?!api|auth).*)/", "destination": "/index.html" },
-    { "source": "/((?!api|auth).*)", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

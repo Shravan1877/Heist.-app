@@ -312,6 +312,13 @@ Return ONLY the rows.`;
         body: JSON.stringify({ prompt: advicePrompt })
       });
       
+      const contentType = aiResponse.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await aiResponse.text();
+        console.error("Non-JSON response from batch AI:", text);
+        throw new Error("System Identity Error: Neural link returned invalid data format.");
+      }
+
       const { text: adviceText, error: aiError } = await aiResponse.json();
       if (aiError) throw new Error(aiError);
 
@@ -413,6 +420,13 @@ TAGS: tag1, tag2, tag3
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt, image: base64, mimeType: file.type || "image/jpeg" })
         });
+
+        const contentType = aiResponse.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await aiResponse.text();
+          console.error("Non-JSON response from vision AI:", text);
+          throw new Error("Vision hardware sync failure: Neural interface corrupted.");
+        }
 
         const { text: visionText, error: aiError } = await aiResponse.json();
         if (aiError) throw new Error(aiError);

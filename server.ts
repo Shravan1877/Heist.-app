@@ -4,11 +4,15 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
+import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Gemini AI Setup (Server-side)
+const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY || "" });
 
 // Supabase Server Client (Prefer Service Role Key for global resets)
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -62,6 +66,51 @@ async function startServer() {
     }
     await performReset();
     res.json({ status: 'success' });
+  });
+  
+  // AI Proxy: Batch
+  app.post('/api/ai/batch', async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      if (!prompt) return res.status(400).json({ error: 'Prompt missing' });
+      
+      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      res.json({ text });
+    } catch (err: any) {
+      console.error("AI Batch Error:", err);
+      res.status(500).json({ error: err.message || "Internal AI Error" });
+    }
+  });
+
+  // AI Proxy: Vision
+  app.post('/api/ai/vision', async (req, res) => {
+    try {
+      const { prompt, image, mimeType } = req.body;
+      if (!prompt || !image) return res.status(400).json({ error: 'Missing parameters' });
+
+      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            mimeType: mimeType || "image/jpeg",
+            data: image
+          }
+        }
+      ]);
+
+      const response = await result.response;
+      const text = response.text();
+
+      res.json({ text });
+    } catch (err: any) {
+      console.error("AI Vision Error:", err);
+      res.status(500).json({ error: err.message || "Internal AI Vision Error" });
+    }
   });
 
   // HEIST Auth Callback for Popups
