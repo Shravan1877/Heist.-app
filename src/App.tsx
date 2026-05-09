@@ -113,24 +113,24 @@ export default function App() {
           }
         }
 
-        const signupData = {
-          email, 
+        console.log("[HEIST] Registering new neural node...");
+        const { data, error } = await supabase.auth.signUp({
+          email,
           password,
           options: {
             data: {
-              full_name: username,
-              style_dna: userVector || [0.25, 0.25, 0.25, 0.25]
+              full_name: username
+              // Removing style_dna from metadata as it might cause vector cast errors in triggers.
+              // Vault component handles profile creation/initialization if trigger fails.
             }
           }
-        };
-
-        console.log("[HEIST] Registering new neural node...");
-        const { data, error } = await supabase.auth.signUp(signupData);
+        });
         
         if (error) {
           console.error("[HEIST] Signup Failure:", error);
-          // If the error is about database saving, try once more without metadata if needed? 
-          // No, better to show the specific error.
+          if (error.message.includes("database error saving new user")) {
+            throw new Error("PROFILES_INTEGRITY_FAULT: The database could not save your identity coordinates. Please try a different alias or contact support.");
+          }
           throw error;
         }
         
