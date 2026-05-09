@@ -17,6 +17,7 @@ interface VaultItem {
   category?: string;
   base_color?: string;
   item_finish?: string;
+  design_type?: string;
   primary_pillar?: string;
   standardized_aesthetic_tags?: string[];
   similarity?: number;
@@ -25,6 +26,7 @@ interface VaultItem {
 interface VaultProps {
   userVector: [number, number, number, number];
   onSignOut?: () => void;
+  onRetakeQuiz?: () => void;
 }
 
 type VaultTab = "recommendations" | "vision" | "batch";
@@ -40,7 +42,7 @@ interface BatchedOutfit {
   matches: VaultItem[];
 }
 
-export default function Vault({ userVector, onSignOut }: VaultProps) {
+export default function Vault({ userVector, onSignOut, onRetakeQuiz }: VaultProps) {
   const [activeTab, setActiveTab] = useState<VaultTab>("recommendations");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("recommended");
@@ -139,7 +141,7 @@ export default function Vault({ userVector, onSignOut }: VaultProps) {
 
         const { data, error: fetchError } = await supabase
           .from('vault')
-          .select('id, brand_name, item_name, price, product_link, image_url, dna_vector, category, base_color, item_finish, primary_pillar, standardized_aesthetic_tags');
+          .select('id, brand_name, item_name, price, product_link, image_url, dna_vector, category, base_color, item_finish, design_type, primary_pillar, standardized_aesthetic_tags');
 
         if (fetchError) throw fetchError;
         setAllItems(data || []);
@@ -225,6 +227,8 @@ export default function Vault({ userVector, onSignOut }: VaultProps) {
       const CAT_FOOTWEAR = ["footwear", "shoes", "sneakers", "loafers", "boots"];
       const CAT_JEWELRY = ["jewelry", "jewellery", "accessory", "accessories", "chain", "watch", "ring"];
 
+      const DESIGN_TAGS = ["abstract", "acid", "argyle", "bengal", "block", "blocked", "camo", "check", "collar", "color", "contrast", "detailing", "distressed", "embossed", "embroidery", "floral", "geometric", "graphics", "heathered", "horizontal", "ink", "intarsia", "jacquard", "marled", "melange", "micro", "motif", "none", "ombre", "patchwork", "pattern", "patterned", "pinstripe", "piping", "plaid", "print", "screen", "solid", "stitching", "stripe", "stripes", "striping", "textured", "tweed", "vertical", "wash", "weave"];
+
       let targets: { name: string, list: string[] }[] = [];
       if (CAT_BOTTOMS.some(c => heroCategory.includes(c))) {
         targets = [{ name: "Tops", list: CAT_TOPS }, { name: "Footwear", list: CAT_FOOTWEAR }, { name: "Jewelry", list: CAT_JEWELRY }];
@@ -238,35 +242,72 @@ export default function Vault({ userVector, onSignOut }: VaultProps) {
 
       const itemVector = parseVector(item.dna_vector);
 
-      // Step A: Harmonic Logic Prediction
-      const advicePrompt = `Hero: ${item.brand_name} ${item.item_name} (Color: ${item.base_color}, Finish: ${item.item_finish || 'standard'}).
-      Predict ideal matching base_color for: ${targets.map(a => a.name).join(", ")}.
-      Return ONLY comma-separated colors.`;
+      // Step A: Prediction with Design Thinking
+      const advicePrompt = `You are an elite wardrobe architect.
+Hero Garment: ${item.brand_name} ${item.item_name}
+Category: ${item.category}
+Color: ${item.base_color}
+Design Type: ${item.design_type || 'unspecified'}
+Finish: ${item.item_finish || 'standard'}
+
+Predict the ideal matching [Base Color] and [Design Type] for a cohesive 3-piece batch.
+Target Pieces: ${targets.map(a => a.name).join(", ")}
+
+Available Design Types: ${DESIGN_TAGS.join(", ")}
+
+Return format:
+TargetName|Color|DesignType
+Example:
+Tops|Navy|Solid
+Footwear|White|None
+
+Return ONLY the rows.`;
 
       const adviceResult = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: [{ parts: [{ text: advicePrompt }] }]
       });
 
-      const colors = (adviceResult.text || "").split(",").map(c => c.trim().toLowerCase());
+      const predictions = (adviceResult.text || "").split("\n")
+        .filter(line => line.includes("|"))
+        .map(line => {
+          const [name, color, type] = line.split("|").map(s => s.trim().toLowerCase());
+          return { name, color, type };
+        });
 
-      // Step B: Proximity & Harmony Selection
-      const pool = allItems.filter(c => c.id !== item.id).slice(0, 100);
-      const selectionPrompt = `Selected items must align with Hero DNA and maintain texture harmony (${item.item_finish || 'standard'}).
-      Hero: ${item.brand_name} ${item.item_name}.
-      Candidates:
-      ${pool.map((c, i) => `${i}: ${c.brand_name} ${c.item_name} [${c.category}, ${c.base_color}, ${c.item_finish || 'standard'}]`).join("\n")}
-      
-      Pick the absolute BEST match for each: ${targets.map(a => a.name).join(", ")}.
-      Return ONLY indices, comma-separated.`;
+      // Step B: Mathematical Proximity Search
+      const finalItems: VaultItem[] = [];
+      const pool = allItems.filter(c => c.id !== item.id);
 
-      const finalResult = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: [{ parts: [{ text: selectionPrompt }] }]
-      });
+      for (const target of targets) {
+        const prediction = predictions.find(p => p.name.includes(target.name.toLowerCase()));
+        
+        // Filter pool for this specific target category branch
+        const candidates = pool.filter(p => target.list.some(cat => (p.category || "").toLowerCase().includes(cat)));
 
-      const indices = (finalResult.text || "").split(",").map(v => parseInt(v.trim())).filter(v => !isNaN(v));
-      const finalItems = indices.map(idx => pool[idx]).filter(Boolean).slice(0, targets.length);
+        if (candidates.length === 0) continue;
+
+        // Scoring: 
+        // 50% Vector Proximity
+        // 30% Color Match
+        // 20% Design Type Match
+        const scored = candidates.map(c => {
+          const vSim = calculateSimilarity(itemVector, parseVector(c.dna_vector));
+          let colorScore = 0;
+          let designScore = 0;
+
+          if (prediction) {
+            if ((c.base_color || "").toLowerCase().includes(prediction.color)) colorScore = 1;
+            if ((c.design_type || "").toLowerCase() === prediction.type) designScore = 1;
+          }
+
+          const totalScore = (vSim * 0.5) + (colorScore * 0.3) + (designScore * 0.2);
+          return { ...c, totalScore };
+        });
+
+        scored.sort((a, b) => b.totalScore - a.totalScore);
+        if (scored[0]) finalItems.push(scored[0]);
+      }
 
       setBatchedOutfit({ base: item, matches: finalItems });
 
@@ -379,6 +420,12 @@ TAGS: tag1, tag2, tag3
           <div className="flex items-center gap-4">
             {userProfile && (
               <div className="flex gap-4 mr-4 items-center">
+                <button 
+                  onClick={onRetakeQuiz}
+                  className="hidden md:block px-3 py-1 border border-neon/30 text-[7px] text-neon uppercase tracking-[0.2em] hover:bg-neon hover:text-basalt transition-all"
+                >
+                  Re-calibrate DNA
+                </button>
                 <div className="hidden lg:block text-right pr-4 border-r border-limestone/10">
                   <p className="text-[7px] text-limestone uppercase tracking-widest leading-none mb-1">Identity Verified</p>
                   <p className="text-[9px] font-black text-neon truncate max-w-[120px]">{userProfile.full_name || userProfile.email.split('@')[0]}</p>

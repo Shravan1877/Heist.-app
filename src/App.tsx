@@ -361,7 +361,11 @@ export default function App() {
                 exit={{ opacity: 0 }}
                 className="h-full"
               >
-                <Vault userVector={userVector} onSignOut={handleSignOut} />
+                <Vault 
+                  userVector={userVector} 
+                  onSignOut={handleSignOut} 
+                  onRetakeQuiz={() => setView("diagnostic")}
+                />
               </motion.div>
             )}
           </AnimatePresence>
