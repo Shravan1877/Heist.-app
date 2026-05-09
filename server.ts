@@ -75,6 +75,7 @@ app.get('/api/admin/reset-credits', async (req, res) => {
 
 // AI Proxy: Batch
 app.post('/api/ai/batch', async (req, res) => {
+  console.log("[HEIST_SERVER] Batch Synthesis Request received");
   try {
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: 'Prompt missing' });
@@ -96,6 +97,7 @@ app.post('/api/ai/batch', async (req, res) => {
 
 // AI Proxy: Vision
 app.post('/api/ai/vision', async (req, res) => {
+  console.log("[HEIST_SERVER] Vision Scan Request received");
   try {
     const { prompt, image, mimeType } = req.body;
     if (!prompt || !image) return res.status(400).json({ error: 'Missing parameters' });

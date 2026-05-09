@@ -1,0 +1,6 @@
+{
+  "name": "HEIST.",
+  "description": "Curated fashion AI shopper for men based on a Monarchy model.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}

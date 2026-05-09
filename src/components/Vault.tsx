@@ -227,16 +227,20 @@ export default function Vault({ userVector, onSignOut, onRetakeQuiz }: VaultProp
   }, [allItems, activeTab, userVector, visionVector, visionTags, selectedCategory, sortOrder]);
 
   const handleMatchAndBatch = async (item: VaultItem) => {
-    // Credit Guard
-    if (!isAdmin && (userProfile?.batch_credits || 0) <= 0) {
+    console.log("[HEIST] Starting Synthesis for:", item.item_name);
+    // Credit Guard - Ensure we have a profile or are admin before blocking
+    if (!isAdmin && userProfile && userProfile.batch_credits <= 0) {
+      console.warn("[HEIST] Batch Credits Depleted");
       setError("monarchy limit reached: zero batch credits remaining.");
       return;
     }
 
     setIsBatching(true);
     setLoading(true);
+    setError(null);
     setActiveTab("batch");
     try {
+      console.log("[HEIST] Requesting AI Architect Advice...");
       const heroCategory = (item.category || "").toLowerCase();
       
       const CAT_TOPS = ["shirt", "t-shirt", "sweatshirt/hoodie", "jackets/coats", "tops", "upper"];
@@ -320,9 +324,11 @@ Return ONLY the rows.`;
         throw new Error("System Identity Error: Neural link returned invalid data format.");
       }
 
+      console.log("[HEIST] AI Architect synchronizing coordinates...");
       const { text: adviceText, error: aiError } = await aiResponse.json();
       if (aiError) throw new Error(aiError);
 
+      console.log("[HEIST] Architect Prediction Received. Searching local vault cluster...");
       const predictions = (adviceText || "").split("\n")
         .filter(line => line.includes("|"))
         .map(line => {
@@ -364,6 +370,7 @@ Return ONLY the rows.`;
         if (scored[0]) finalItems.push(scored[0]);
       }
 
+      console.log("[HEIST] Synthesis Complete. Selected items:", finalItems.length);
       setBatchedOutfit({ base: item, matches: finalItems });
 
       // Decrement Credits
@@ -384,8 +391,10 @@ Return ONLY the rows.`;
     const file = e.target.files?.[0];
     if (!file) return;
 
+    console.log("[HEIST] Initializing Optical Aesthetic Scan...");
     // Credit Guard
-    if (!isAdmin && (userProfile?.scan_credits || 0) <= 0) {
+    if (!isAdmin && userProfile && userProfile.scan_credits <= 0) {
+      console.warn("[HEIST] Scan Credits Depleted");
       setError("monarchy limit reached: zero scan credits remaining.");
       return;
     }
@@ -594,12 +603,26 @@ Return ONLY the rows.`;
                     </div>
                     <p className="text-neon text-sm uppercase tracking-[1em] font-black">Neural Link: Calibrating Style Batch...</p>
                   </div>
+                ) : error && activeTab === "batch" ? (
+                  <div className="py-40 text-center border-4 border-dashed border-red-500/20">
+                    <p className="text-red-500 text-sm uppercase tracking-[0.5em] font-black mb-6">{error}</p>
+                    <button 
+                      onClick={() => { setError(null); setActiveTab("recommendations"); }}
+                      className="px-8 py-4 bg-neon/10 text-neon text-[10px] uppercase font-black tracking-widest border border-neon/30"
+                    >
+                      Return to Archive
+                    </button>
+                  </div>
                 ) : batchedOutfit ? (
                   <div className="space-y-24">
                     <div className="flex flex-col items-center">
                       <p className="text-xs font-black text-neon/40 uppercase tracking-[0.8em] mb-12">Foundation Unit</p>
                       <div className="relative group">
-                        <img src={batchedOutfit.base.image_url} className="w-80 h-[480px] object-cover border border-[#D3D3D3] group-hover:border-neon/50 transition-all duration-1000 shadow-[0_0_10px_rgba(211,211,211,0.3)] rounded-none" />
+                        <img 
+                          src={batchedOutfit.base.image_url} 
+                          className="w-80 h-[480px] object-cover border border-[#D3D3D3] group-hover:border-neon/50 transition-all duration-1000 shadow-[0_0_10px_rgba(211,211,211,0.3)] rounded-none" 
+                          referrerPolicy="no-referrer"
+                        />
                         <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-neon text-basalt px-10 py-5 text-xs font-black uppercase tracking-[0.4em] whitespace-nowrap shadow-2xl rounded-none">
                           Selected Anchor
                         </div>
@@ -609,7 +632,11 @@ Return ONLY the rows.`;
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
                       {batchedOutfit.matches.map(item => (
                         <div key={item.id} className="border border-[#D3D3D3]/40 p-8 flex flex-col items-center hover:border-neon/30 transition-all duration-700 shadow-[0_0_10px_rgba(211,211,211,0.1)] rounded-none">
-                          <img src={item.image_url} className="w-full h-[400px] object-cover mb-8 shadow-xl rounded-none" />
+                          <img 
+                            src={item.image_url} 
+                            className="w-full h-[400px] object-cover mb-8 shadow-xl rounded-none" 
+                            referrerPolicy="no-referrer"
+                          />
                           <p className="text-[10px] font-black text-neon/40 uppercase tracking-[0.5em] mb-3 leading-none italic">{item.brand_name}</p>
                           <h6 className="text-xl font-serif font-black text-neon uppercase mb-4 text-center tracking-tight leading-none">{item.item_name}</h6>
                           <div className="w-12 h-[1px] bg-neon/20 mb-4" />
@@ -620,7 +647,7 @@ Return ONLY the rows.`;
 
                     <div className="flex flex-col sm:flex-row justify-center gap-10 mt-20">
                       <button 
-                        onClick={() => handleMatchAndBatch(batchedOutfit.base)}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleMatchAndBatch(batchedOutfit.base); }}
                         className="px-16 py-8 border-2 border-neon text-neon text-xs font-black uppercase tracking-[0.6em] hover:bg-neon hover:text-basalt transition-all duration-700 shadow-[0_0_40px_rgba(180,250,50,0.1)] flex items-center gap-4"
                         disabled={isBatching}
                       >
@@ -628,7 +655,7 @@ Return ONLY the rows.`;
                         Recalculate Combo
                       </button>
                       <button 
-                        onClick={() => setBatchedOutfit(null)}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setBatchedOutfit(null); }}
                         className="px-16 py-8 border-2 border-neon/20 text-neon/40 text-xs font-black uppercase tracking-[0.6em] hover:bg-neon/5 hover:text-neon transition-all duration-700"
                       >
                         Reset Matrix
@@ -712,6 +739,7 @@ Return ONLY the rows.`;
                         key={item.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ delay: idx * 0.01 }}
                         className="group flex flex-col"
                       >
@@ -736,7 +764,7 @@ Return ONLY the rows.`;
                               <ExternalLink className="w-6 h-6" />
                             </a>
                             <button 
-                              onClick={() => handleMatchAndBatch(item)}
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleMatchAndBatch(item); }}
                               className="w-14 h-14 bg-white text-basalt rounded-none flex items-center justify-center hover:scale-110 transition-transform shadow-2xl"
                               title="Synthesis Hub"
                             >
