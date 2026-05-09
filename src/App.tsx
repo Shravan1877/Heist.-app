@@ -80,10 +80,7 @@ export default function App() {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supabase) {
-      setAuthError("Supabase is not configured. Please check your environment variables.");
-      return;
-    }
+    if (!supabase) return;
     setAuthError(null);
     setLoading(true);
 
@@ -93,23 +90,31 @@ export default function App() {
           email, 
           password,
           options: {
+            emailRedirectTo: window.location.origin,
             data: {
               dna_vector: userVector || [0.25, 0.25, 0.25, 0.25]
             }
           }
         });
         if (error) throw error;
-        if (data.session) {
+        
+        if (data.user && !data.session) {
+          setAuthError("Identity Request Received. Please check your email to verify your DNA map.");
+        } else if (data.session) {
           setSession(data.session);
           if (userVector) setView("vault");
-        } else {
-          setAuthError("Check your email for verification link.");
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         if (data.session) {
           setSession(data.session);
+          // Fetch DNA vector after sign in
+          const { data: profile } = await supabase.from("profiles").select("dna_vector").eq("id", data.session.user.id).single();
+          if (profile?.dna_vector) {
+            const vector = typeof profile.dna_vector === "string" ? JSON.parse(profile.dna_vector) : profile.dna_vector;
+            setUserVector(vector);
+          }
           setView("vault");
         }
       }
