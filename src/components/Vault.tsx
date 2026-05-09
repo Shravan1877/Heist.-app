@@ -4,7 +4,8 @@ import { supabase } from "../lib/supabase";
 import { cn, formatCurrency } from "../lib/utils";
 import { ExternalLink, Camera, Sparkles, RefreshCcw, LayoutGrid, Scan, ChevronRight } from "lucide-react";
 import { getAestheticIdentity } from "../logic/calculator";
-import { GoogleGenAI } from "@google/genai";
+// Gemini API is now handled via server proxy to fix browser-only key issues on Vercel
+// import { GoogleGenAI } from "@google/genai";
 
 interface VaultItem {
   id: string;
@@ -109,13 +110,15 @@ export default function Vault({ userVector, onSignOut, onRetakeQuiz }: VaultProp
             .single();
 
           if (pError || !profile) {
+            const fullName = user.user_metadata?.full_name || "";
             // New User: Create Profile with defaults
             const newProfile = {
               id: user.id,
               email: user.email || "",
+              full_name: fullName,
               scan_credits: 5,
               batch_credits: 8,
-              style_dna: userVector // Changed from dna_vector to style_dna
+              style_dna: userVector
             };
             const { data: upserted, error: uError } = await supabase
               .from('profiles')
@@ -125,6 +128,21 @@ export default function Vault({ userVector, onSignOut, onRetakeQuiz }: VaultProp
             
             if (!uError && upserted) {
               profile = upserted;
+            }
+          } else {
+            // Update full_name if profile exists but name is missing and we have it in metadata
+            if (!profile.full_name && user.user_metadata?.full_name) {
+              const { data: updated } = await supabase
+                .from('profiles')
+                .update({ full_name: user.user_metadata.full_name })
+                .eq('id', user.id)
+                .select()
+                .single();
+              if (updated) profile = updated;
+            }
+            // Sync style_dna if missing in profile but present in local context (e.g. just finished quiz)
+            if (!profile.style_dna && userVector) {
+              await supabase.from('profiles').update({ style_dna: userVector }).eq('id', user.id);
             }
           }
 
@@ -218,31 +236,56 @@ export default function Vault({ userVector, onSignOut, onRetakeQuiz }: VaultProp
     setLoading(true);
     setActiveTab("batch");
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
       const heroCategory = (item.category || "").toLowerCase();
       
-      const CAT_TOPS = ["jackets/coats", "t-shirt", "sweatshirt/hoodie", "shirt", "outerwear", "tops", "jacket", "knitwear"];
-      const CAT_BOTTOMS = ["pant", "shorts", "pants", "bottoms", "trouser", "trousers"];
-      const CAT_FULL = ["co-ords", "suits", "co-ord", "suit"];
-      const CAT_FOOTWEAR = ["footwear", "shoes", "sneakers", "loafers", "boots"];
-      const CAT_JEWELRY = ["jewelry", "jewellery", "accessory", "accessories", "chain", "watch", "ring"];
+      const CAT_TOPS = ["shirt", "t-shirt", "sweatshirt/hoodie", "jackets/coats"];
+      const CAT_BOTTOMS = ["pant", "shorts"];
+      const CAT_FOOTWEAR = ["footwear"];
+      const CAT_SETS = ["co-ords", "suits"];
+      const CAT_ACCESSORIES = ["jewlery"];
 
       const DESIGN_TAGS = ["abstract", "acid", "argyle", "bengal", "block", "blocked", "camo", "check", "collar", "color", "contrast", "detailing", "distressed", "embossed", "embroidery", "floral", "geometric", "graphics", "heathered", "horizontal", "ink", "intarsia", "jacquard", "marled", "melange", "micro", "motif", "none", "ombre", "patchwork", "pattern", "patterned", "pinstripe", "piping", "plaid", "print", "screen", "solid", "stitching", "stripe", "stripes", "striping", "textured", "tweed", "vertical", "wash", "weave"];
 
       let targets: { name: string, list: string[] }[] = [];
-      if (CAT_BOTTOMS.some(c => heroCategory.includes(c))) {
-        targets = [{ name: "Tops", list: CAT_TOPS }, { name: "Footwear", list: CAT_FOOTWEAR }, { name: "Jewelry", list: CAT_JEWELRY }];
-      } else if (CAT_TOPS.some(c => heroCategory.includes(c))) {
-        targets = [{ name: "Bottoms", list: CAT_BOTTOMS }, { name: "Footwear", list: CAT_FOOTWEAR }, { name: "Jewelry", list: CAT_JEWELRY }];
-      } else if (CAT_FULL.some(c => heroCategory.includes(c))) {
-        targets = [{ name: "Footwear", list: CAT_FOOTWEAR }, { name: "Jewelry", list: CAT_JEWELRY }];
+      const isTop = CAT_TOPS.includes(heroCategory);
+      const isBottom = CAT_BOTTOMS.includes(heroCategory);
+      const isFootwear = CAT_FOOTWEAR.includes(heroCategory);
+      const isSet = CAT_SETS.includes(heroCategory);
+
+      if (isTop) {
+        targets = [
+          { name: "Bottoms", list: CAT_BOTTOMS },
+          { name: "Footwear", list: CAT_FOOTWEAR },
+          { name: "Accessories", list: CAT_ACCESSORIES }
+        ];
+      } else if (isBottom) {
+        targets = [
+          { name: "Tops", list: CAT_TOPS },
+          { name: "Footwear", list: CAT_FOOTWEAR },
+          { name: "Accessories", list: CAT_ACCESSORIES }
+        ];
+      } else if (isFootwear) {
+        targets = [
+          { name: "Tops", list: CAT_TOPS },
+          { name: "Bottoms", list: CAT_BOTTOMS },
+          { name: "Accessories", list: CAT_ACCESSORIES }
+        ];
+      } else if (isSet) {
+        targets = [
+          { name: "Footwear", list: CAT_FOOTWEAR },
+          { name: "Accessories", list: CAT_ACCESSORIES }
+        ];
       } else {
-        targets = [{ name: "Tops", list: CAT_TOPS }, { name: "Bottoms", list: CAT_BOTTOMS }, { name: "Footwear", list: CAT_FOOTWEAR }];
+        targets = [
+          { name: "Tops", list: CAT_TOPS },
+          { name: "Bottoms", list: CAT_BOTTOMS },
+          { name: "Footwear", list: CAT_FOOTWEAR }
+        ];
       }
 
       const itemVector = parseVector(item.dna_vector);
 
-      // Step A: Prediction with Design Thinking
+      // Step A: Prediction with Design Thinking via Server Proxy
       const advicePrompt = `You are an elite wardrobe architect.
 Hero Garment: ${item.brand_name} ${item.item_name}
 Category: ${item.category}
@@ -263,12 +306,16 @@ Footwear|White|None
 
 Return ONLY the rows.`;
 
-      const adviceResult = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: [{ parts: [{ text: advicePrompt }] }]
+      const aiResponse = await fetch('/api/ai/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: advicePrompt })
       });
+      
+      const { text: adviceText, error: aiError } = await aiResponse.json();
+      if (aiError) throw new Error(aiError);
 
-      const predictions = (adviceResult.text || "").split("\n")
+      const predictions = (adviceText || "").split("\n")
         .filter(line => line.includes("|"))
         .map(line => {
           const [name, color, type] = line.split("|").map(s => s.trim().toLowerCase());
@@ -343,8 +390,6 @@ Return ONLY the rows.`;
       reader.onloadend = async () => {
         const base64 = (reader.result as string).split(',')[1];
         
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-        
         const prompt = `
 Act as an elite fashion analyst. Analyze the garment in the image and extract its style DNA and aesthetic markers. 
 
@@ -363,19 +408,16 @@ DNA: [OM], [IV], [SB], [SW]
 TAGS: tag1, tag2, tag3
 `;
 
-        const response = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: [
-            {
-              parts: [
-                { text: prompt },
-                { inlineData: { mimeType: file.type || "image/jpeg", data: base64 } }
-              ]
-            }
-          ]
+        const aiResponse = await fetch('/api/ai/vision', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, image: base64, mimeType: file.type || "image/jpeg" })
         });
 
-        const text = response.text || "";
+        const { text: visionText, error: aiError } = await aiResponse.json();
+        if (aiError) throw new Error(aiError);
+
+        const text = visionText || "";
         const dnaMatch = text.match(/DNA:\s*([\d.,\s]+)/);
         const tagsMatch = text.match(/TAGS:\s*([^\n]+)/);
 
