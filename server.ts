@@ -131,7 +131,7 @@ app.get('/auth/callback', (req, res) => {
   res.send(`
     <html>
       <head>
-        <title>HEIST. Identity Verified</title>
+        <title>HEIST. Login Successful</title>
         <style>
           body { background: #0A0A0A; color: #B4FA32; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
           .content { text-align: center; border: 1px solid rgba(180,250,50,0.2); padding: 40px; }
@@ -141,8 +141,8 @@ app.get('/auth/callback', (req, res) => {
       </head>
       <body>
         <div class="content">
-          <h1>Identity Verified</h1>
-          <p>Closing Secure Channel...</p>
+          <h1>Login Successful</h1>
+          <p>Returning to HEIST...</p>
         </div>
         <script>
           if (window.opener) {

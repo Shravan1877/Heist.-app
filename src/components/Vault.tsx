@@ -26,6 +26,7 @@ interface VaultItem {
 
 interface VaultProps {
   userVector: [number, number, number, number];
+  initialTab?: VaultTab;
   onSignOut?: () => void;
   onRetakeQuiz?: () => void;
 }
@@ -43,14 +44,35 @@ interface BatchedOutfit {
   matches: VaultItem[];
 }
 
-export default function Vault({ userVector, onSignOut, onRetakeQuiz }: VaultProps) {
-  const [activeTab, setActiveTab] = useState<VaultTab>("recommendations");
+export default function Vault({ userVector, initialTab, onSignOut, onRetakeQuiz }: VaultProps) {
+  const [activeTab, setActiveTab] = useState<VaultTab>(initialTab || "recommendations");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("recommended");
   const [allItems, setAllItems] = useState<VaultItem[]>([]);
   const [displayedItems, setDisplayedItems] = useState<VaultItem[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const trackInteraction = async (itemId: string, type: string) => {
+    try {
+      // Fetch current interactions to increment or append
+      const { data: item } = await supabase!
+        .from('vault')
+        .select('interactions')
+        .eq('id', itemId)
+        .single();
+      
+      const current = item?.interactions || 0;
+      await supabase!
+        .from('vault')
+        .update({ interactions: (typeof current === 'number' ? current + 1 : 1) })
+        .eq('id', itemId);
+      
+      console.log(`[HEIST] Interaction logged: ${type} on ${itemId}`);
+    } catch (e) {
+      console.warn("[HEIST] Interaction logging failed:", e);
+    }
+  };
   const [visionVector, setVisionVector] = useState<number[] | null>(null);
   const [visionTags, setVisionTags] = useState<string[]>([]);
   const [isVisionScanning, setIsVisionScanning] = useState(false);
@@ -458,7 +480,7 @@ Return ONLY the rows.`;
       <div className="px-6 md:px-24 pt-12 md:pt-16 pb-8 border-b border-neon/5 bg-basalt/30 backdrop-blur-sm">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-8 md:gap-12 mb-12 md:mb-16">
           <h2 className="text-4xl sm:text-6xl md:text-8xl font-serif font-black text-neon tracking-tighter uppercase leading-none text-center lg:text-left">
-            {activeTab === "recommendations" ? "Atmosphere" : (activeTab === "batch" ? "Synthesis" : "Vision Scan")}
+            {activeTab === "recommendations" ? "Vault" : (activeTab === "batch" ? "Synthesis" : "Vision Engine")}
           </h2>
           <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
             {userProfile && (
@@ -470,7 +492,7 @@ Return ONLY the rows.`;
                   Re-calibrate DNA Map
                 </button>
                 <div className="hidden lg:block text-right pr-6 md:pr-12 border-r border-neon/10">
-                  <p className="text-[9px] text-neon/40 uppercase tracking-[0.4em] leading-none mb-3 font-black">Identity Verified</p>
+                  <p className="text-[9px] text-neon/40 uppercase tracking-[0.4em] leading-none mb-3 font-black">Account</p>
                   <p className="text-sm font-black text-neon truncate max-w-[150px] md:max-w-[200px] tracking-tight">{userProfile.full_name || userProfile.email.split('@')[0]}</p>
                 </div>
                 <div className="text-center md:text-right">
@@ -491,6 +513,13 @@ Return ONLY the rows.`;
               <LayoutGrid className="w-5 h-5 md:w-6 md:h-6 text-neon/60 hover:text-neon" />
             </button>
           </div>
+        </div>
+
+        {/* Onboarding / Dashboard Guide */}
+        <div className="max-w-4xl mx-auto mb-12 p-6 bg-neon/5 border border-neon/10 rounded-none text-center">
+          <p className="text-[10px] md:text-xs text-neon uppercase tracking-[0.3em] font-black leading-loose">
+            Click any item to see your options: <span className="text-white bg-neon/20 px-2">Open Link</span> to buy, or <span className="text-white bg-neon/20 px-2">Curate an outfit</span> to see it styled.
+          </p>
         </div>
 
         {/* Tab Switcher - Centered and Wider */}
@@ -524,23 +553,22 @@ Return ONLY the rows.`;
           </button>
         </div>
 
-        {/* Global Controls: Filters & Sort - Scaled Up */}
+        {/* Global Controls: Filters & Sort - Retractable on all devices */}
         {(activeTab === "recommendations" || (activeTab === "vision" && visionVector)) && (
           <div className="max-w-7xl mx-auto mb-8 md:mb-12">
-            {/* Mobile Filter Toggle */}
-            <div className="flex justify-center md:hidden mb-6">
+            <div className="flex justify-center mb-6">
               <button 
                 onClick={() => setShowFilters(!showFilters)}
-                className="px-8 py-3 border border-neon/30 text-[10px] text-neon uppercase tracking-[0.4em] font-black flex items-center gap-3 bg-neon/5"
+                className="px-8 py-3 border border-neon/30 text-[10px] text-neon uppercase tracking-[0.4em] font-black flex items-center gap-3 bg-neon/5 hover:bg-neon/10 transition-all"
               >
                 <LayoutGrid className="w-4 h-4" />
-                {showFilters ? "Close Node" : "Filter Nodes"}
+                {showFilters ? "Collapse Filters" : "Expand Categories & Filters"}
               </button>
             </div>
 
             <div className={cn(
               "space-y-8 transition-all duration-500 overflow-hidden",
-              showFilters ? "max-h-[1000px] opacity-100 mb-8" : "max-h-0 md:max-h-none opacity-0 md:opacity-100"
+              showFilters ? "max-h-[1000px] opacity-100 mb-8" : "max-h-0 opacity-0"
             )}>
               <div className="flex flex-wrap justify-center gap-2 md:gap-4">
                 {CATEGORIES.map(cat => (
@@ -628,18 +656,28 @@ Return ONLY the rows.`;
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
                       {batchedOutfit.matches.map(item => (
-                        <div key={item.id} className="border border-[#D3D3D3]/40 p-8 flex flex-col items-center hover:border-neon/30 transition-all duration-700 shadow-[0_0_10px_rgba(211,211,211,0.1)] rounded-none">
+                        <div key={item.id} className="group relative border border-[#D3D3D3]/40 p-8 flex flex-col items-center hover:border-neon/30 transition-all duration-700 shadow-[0_0_10px_rgba(211,211,211,0.1)] rounded-none">
                           <img 
                             src={item.image_url} 
-                            className="w-full h-[400px] object-cover mb-8 shadow-xl rounded-none" 
+                            className="w-full h-[400px] object-cover mb-8 shadow-xl rounded-none transition-all duration-700 group-hover:scale-105" 
                             referrerPolicy="no-referrer"
                           />
                           <p className="text-[10px] font-black text-neon/40 uppercase tracking-[0.5em] mb-3 leading-none italic">{item.brand_name}</p>
                           <h6 className="text-xl font-serif font-black text-neon uppercase mb-4 text-center tracking-tight leading-none">{item.item_name}</h6>
                           <div className="w-12 h-[1px] bg-neon/20 mb-4" />
-                          <p className="text-[11px] font-mono text-neon/60 uppercase tracking-widest">{item.category}</p>
+                          <p className="text-[11px] font-mono text-neon/60 uppercase tracking-widest mb-6">{item.category}</p>
+                          
+                          <a 
+                            href={item.product_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => trackInteraction(item.id, 'outfit_link_click')}
+                            className="mt-auto px-6 py-3 bg-neon text-basalt text-[9px] font-black uppercase tracking-[0.3em] hover:bg-white transition-all"
+                          >
+                            Open Product Link
+                          </a>
                         </div>
                       ))}
                     </div>
@@ -683,9 +721,9 @@ Return ONLY the rows.`;
                 <div className="w-32 h-32 bg-neon/10 flex items-center justify-center mb-10 border border-neon/30 shadow-[0_0_60px_rgba(180,250,50,0.1)]">
                   <Camera className="text-neon w-12 h-12" />
                 </div>
-                <h3 className="text-5xl font-serif font-black text-neon mb-6 uppercase tracking-tighter">Optical Aesthetic Scan</h3>
+                <h3 className="text-5xl font-serif font-black text-neon mb-6 uppercase tracking-tighter">Vision Engine</h3>
                 <p className="text-limestone text-xs md:text-sm uppercase tracking-[0.5em] font-bold leading-loose max-w-2xl mb-16 italic">
-                  Analyzing vibes, not patterns. Upload visual data to isolate 100 synchronized items across our global network.
+                  Upload a photo of any item you own or see online. Our Vision Engine will analyze its DNA and find matching pieces from our partner brands.
                 </p>
                 <label className="bg-neon text-basalt px-16 py-8 font-black text-xs uppercase tracking-[1em] cursor-pointer hover:bg-white transition-all duration-1000 shadow-2xl">
                   Connect Optics
@@ -754,20 +792,20 @@ Return ONLY the rows.`;
                           </div>
                           
                           {/* Hover Controls Overlay */}
-                          <div className="absolute inset-0 bg-basalt/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center gap-6 backdrop-blur-sm rounded-none">
+                          <div className="absolute inset-0 bg-basalt/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center gap-4 backdrop-blur-sm rounded-none px-6">
                             <a 
                               href={item.product_link} 
                               target="_blank" 
-                              className="w-14 h-14 bg-neon text-basalt rounded-none flex items-center justify-center hover:scale-110 transition-transform shadow-2xl"
+                              onClick={() => trackInteraction(item.id, 'link_click')}
+                              className="w-full py-4 bg-neon text-basalt rounded-none flex items-center justify-center gap-2 hover:bg-white transition-all shadow-2xl text-[10px] font-black uppercase tracking-[0.3em]"
                             >
-                              <ExternalLink className="w-6 h-6" />
+                              Open Link
                             </a>
                             <button 
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleMatchAndBatch(item); }}
-                              className="w-14 h-14 bg-white text-basalt rounded-none flex items-center justify-center hover:scale-110 transition-transform shadow-2xl"
-                              title="Synthesis Hub"
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); trackInteraction(item.id, 'batch_click'); handleMatchAndBatch(item); }}
+                              className="w-full py-4 bg-white text-basalt rounded-none flex items-center justify-center gap-2 hover:bg-neon transition-all shadow-2xl text-[10px] font-black uppercase tracking-[0.3em]"
                             >
-                              <Sparkles className="w-6 h-6" />
+                              Curate an outfit
                             </button>
                           </div>
                         </div>

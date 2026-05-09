@@ -7,13 +7,14 @@ import React, { useState, useEffect } from "react";
 import Diagnostic from "./components/Diagnostic";
 import Vault from "./components/Vault";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, ShieldCheck, LogIn, UserCircle, Archive, Scan, LayoutGrid } from "lucide-react";
+import { Sparkles, ShieldCheck, LogIn, UserCircle, Archive, Scan, LayoutGrid, Camera } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import { cn } from "./lib/utils";
 import { Session } from "@supabase/supabase-js";
 
 export default function App() {
   const [view, setView] = useState<"home" | "diagnostic" | "vault" | "auth_required">("home");
+  const [vaultTab, setVaultTab] = useState<"recommendations" | "vision">("recommendations");
   const [userVector, setUserVector] = useState<[number, number, number, number] | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -176,7 +177,8 @@ export default function App() {
 
   const handleLogin = () => setView("auth_required");
 
-  const handleSavedSignIn = async () => {
+  const handleSavedSignIn = async (tab: "recommendations" | "vision" = "recommendations") => {
+    setVaultTab(tab);
     if (session) {
       if (userVector) {
         setView("vault");
@@ -241,25 +243,28 @@ export default function App() {
                     transition={{ delay: 0.4, duration: 0.8 }}
                     className="text-7xl sm:text-9xl md:text-[220px] font-serif font-black leading-[0.75] mb-8 md:mb-16 tracking-[-0.07em] uppercase break-words px-4"
                   >
-                    HEIST.<br /> 
-                    VAULT.
+                    HEIST.
                   </motion.h1>
                   
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.6 }}
-                    className="space-y-10 max-w-2xl"
-                  >
-                    <p className="text-neon/80 text-lg md:text-xl font-medium leading-relaxed tracking-tight">
-                      Curated by experts. Verified by AI. Designed for the 1%. <br className="hidden md:block" />
-                      Vault coordinates optimized for precision stylistic matching.
-                    </p>
-                    <div className="h-[1px] w-full bg-neon/10" />
-                    <p className="text-limestone text-xs uppercase tracking-[0.3em] leading-loose">
-                      Clueless? Click below to begin atmospheric DNA mapping and unlock the high-tech vault.
-                    </p>
-                  </motion.div>
+                    <div className="space-y-10 max-w-2xl">
+                      <h2 className="text-neon text-xl md:text-2xl font-serif font-black uppercase tracking-tight">
+                        The Mission
+                      </h2>
+                      <p className="text-neon/80 text-lg md:text-xl font-medium leading-relaxed tracking-tight">
+                        HEIST. It's not just another shop; it’s a platform for the best homegrown fashion brands, many hidden gems stay hidden, and it's time to change it. We don't dump thousands of items on you. We curate your specific vibe.
+                      </p>
+                      <div className="h-[1px] w-full bg-neon/10" />
+                      <h2 className="text-neon text-xl md:text-2xl font-serif font-black uppercase tracking-tight">
+                        The Technology
+                      </h2>
+                      <p className="text-neon/80 text-lg md:text-xl font-medium leading-relaxed tracking-tight">
+                        Using a state-of-the-art Style DNA Quiz, our AI maps your exact aesthetic preferences to create a personalized digital wardrobe. No noise, just your style.
+                      </p>
+                      <div className="h-[1px] w-full bg-neon/10" />
+                      <p className="text-limestone text-xs uppercase tracking-[0.3em] leading-loose">
+                        Take the 2-minute Style DNA Quiz to unlock your curated vault.
+                      </p>
+                    </div>
                 </div>
 
                 <div className="mt-12 md:mt-24 flex flex-col sm:flex-row gap-4 md:gap-6 w-full max-w-2xl px-6">
@@ -271,7 +276,7 @@ export default function App() {
                         className="flex-1 bg-neon text-basalt py-8 flex items-center justify-center gap-4 group transition-all duration-700 relative overflow-hidden shadow-[0_0_50px_rgba(180,250,50,0.1)]"
                       >
                         <Sparkles className="w-5 h-5" />
-                        <span className="text-xs tracking-[0.4em] font-black uppercase">Map Style DNA</span>
+                        <span className="text-xs tracking-[0.4em] font-black uppercase">Start Style DNA Quiz</span>
                       </button>
 
                       <button
@@ -279,26 +284,33 @@ export default function App() {
                         className="flex-1 bg-transparent text-neon py-8 flex items-center justify-center gap-4 group hover:bg-neon/10 transition-all duration-300 border border-neon/20"
                       >
                         <LogIn className="w-5 h-5" />
-                        <span className="text-xs tracking-[0.4em] font-black uppercase">Identity Verified</span>
+                        <span className="text-xs tracking-[0.4em] font-black uppercase">Sign In</span>
                       </button>
                     </>
-                  ) : (
-                    <div className="flex flex-col gap-6 w-full">
-                      <button
-                        onClick={handleSavedSignIn}
-                        className="w-full bg-neon text-basalt py-8 flex items-center justify-center gap-4 group hover:scale-[1.02] transition-all duration-300 shadow-[0_0_60px_rgba(180,250,50,0.4)]"
-                      >
-                        <UserCircle className="w-6 h-6" />
-                        <span className="text-xs tracking-[0.5em] font-black uppercase">Resume Identity</span>
-                      </button>
-                      <button
-                        onClick={handleSignOut}
-                        className="w-full py-4 text-limestone/60 font-black text-xs uppercase tracking-[0.4em] hover:text-red-500 transition-colors"
-                      >
-                        De-authorize Neural Node [{session.user.email?.split('@')[0]}]
-                      </button>
-                    </div>
-                  )}
+                   ) : (
+                     <div className="flex flex-col gap-6 w-full">
+                       <button
+                         onClick={() => handleSavedSignIn("vision")}
+                         className="w-full bg-neon text-basalt py-8 flex items-center justify-center gap-4 group hover:scale-[1.02] transition-all duration-300 shadow-[0_0_60px_rgba(180,250,50,0.4)]"
+                       >
+                         <Camera className="w-6 h-6" />
+                         <span className="text-xs tracking-[0.5em] font-black uppercase">Open Vision Engine</span>
+                       </button>
+                       <button
+                         onClick={() => handleSavedSignIn("recommendations")}
+                         className="w-full bg-transparent text-neon/60 py-6 flex items-center justify-center gap-4 border border-neon/20 hover:border-neon hover:text-neon transition-all"
+                       >
+                         <Archive className="w-5 h-5" />
+                         <span className="text-xs tracking-[0.4em] font-black uppercase">Archive Storage</span>
+                       </button>
+                       <button
+                         onClick={handleSignOut}
+                         className="w-full py-4 text-limestone/40 font-black text-[9px] uppercase tracking-[0.4em] hover:text-red-500 transition-colors"
+                       >
+                         De-authorize Neural Node [{session.user.email?.split('@')[0]}]
+                       </button>
+                     </div>
+                   )}
                 </div>
               </motion.div>
             )}
@@ -353,7 +365,7 @@ export default function App() {
                   <div className="space-y-1">
                     <input 
                       type="email" 
-                      placeholder="EMAIL COORDINATES"
+                      placeholder="EMAIL"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -363,7 +375,7 @@ export default function App() {
                   <div className="space-y-1">
                     <input 
                       type="password" 
-                      placeholder="VAULT CRYPTO KEY"
+                      placeholder="PASSWORD"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -400,7 +412,7 @@ export default function App() {
                   onClick={() => setAuthMode(authMode === "signin" ? "signup" : "signin")}
                   className="text-neon/40 text-[10px] uppercase font-black tracking-[0.4em] hover:text-neon transition-colors"
                 >
-                  {authMode === "signin" ? "NEW USER? CREATE IDENTITY" : "ALREADY REGISTERED? SYNC MATRIX"}
+                  {authMode === "signin" ? "NEW TO HEIST? SIGN UP" : "ALREADY HAVE AN ACCOUNT? SIGN IN"}
                 </button>
               </motion.div>
             )}
@@ -415,6 +427,7 @@ export default function App() {
               >
                 <Vault 
                   userVector={userVector} 
+                  initialTab={vaultTab}
                   onSignOut={handleSignOut} 
                   onRetakeQuiz={() => setView("diagnostic")}
                 />
@@ -424,38 +437,27 @@ export default function App() {
         </main>
         
         <nav className="fixed bottom-4 md:bottom-8 left-0 right-0 md:left-1/2 md:-translate-x-1/2 z-[100] flex items-center justify-center pointer-events-none">
-          <div className="flex items-center gap-1 md:gap-2 p-1.5 md:p-2 bg-basalt/60 backdrop-blur-2xl border border-limestone/40 shadow-[0_0_40px_rgba(0,0,0,0.5)] pointer-events-auto mx-4">
+          <div className="flex items-center gap-2 md:gap-4 p-2 md:p-3 bg-basalt/60 backdrop-blur-2xl border border-limestone/40 shadow-[0_0_40px_rgba(0,0,0,0.5)] pointer-events-auto mx-4">
             <button 
               onClick={() => setView("vault")}
               className={cn(
-                "flex-1 md:px-8 py-3 md:py-4 px-4 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
+                "flex-1 md:px-12 py-4 px-6 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
                 view === "vault" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
               )}
             >
-              <Archive className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="text-[7px] md:text-[8px] font-black tracking-widest uppercase">Archive</span>
+              <Archive className="w-5 h-5" />
+              <span className="text-[8px] md:text-[10px] font-black tracking-widest uppercase">Archive</span>
             </button>
             
             <button 
-              onClick={() => setView("diagnostic")}
-              className={cn(
-                "flex-1 md:px-8 py-3 md:py-4 px-4 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
-                view === "diagnostic" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
-              )}
-            >
-              <Scan className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="text-[7px] md:text-[8px] font-black tracking-widest uppercase">Scan</span>
-            </button>
-
-            <button 
               onClick={() => setView("home")}
               className={cn(
-                "flex-1 md:px-8 py-3 md:py-4 px-4 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
+                "flex-1 md:px-12 py-4 px-6 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
                 view === "home" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
               )}
             >
-              <ShieldCheck className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="text-[7px] md:text-[8px] font-black tracking-widest uppercase">Protocol</span>
+              <ShieldCheck className="w-5 h-5" />
+              <span className="text-[8px] md:text-[10px] font-black tracking-widest uppercase">Protocol</span>
             </button>
           </div>
         </nav>
