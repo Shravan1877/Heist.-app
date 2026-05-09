@@ -55,7 +55,7 @@ export default function Vault({ userVector, onSignOut }: VaultProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Credit & Auth State
-  const [userProfile, setUserProfile] = useState<{ id: string, email: string, scan_credits: number, batch_credits: number } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ id: string, email: string, full_name: string, scan_credits: number, batch_credits: number } | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   const identity = getAestheticIdentity(userVector);
@@ -113,7 +113,7 @@ export default function Vault({ userVector, onSignOut }: VaultProps) {
               email: user.email || "",
               scan_credits: 5,
               batch_credits: 8,
-              dna_vector: userVector // Already have it from quiz
+              style_dna: userVector // Changed from dna_vector to style_dna
             };
             const { data: upserted, error: uError } = await supabase
               .from('profiles')
@@ -130,6 +130,7 @@ export default function Vault({ userVector, onSignOut }: VaultProps) {
             setUserProfile({
               id: profile.id,
               email: profile.email || user.email || "",
+              full_name: profile.full_name || "",
               scan_credits: profile.scan_credits,
               batch_credits: profile.batch_credits
             });
@@ -380,7 +381,7 @@ TAGS: tag1, tag2, tag3
               <div className="flex gap-4 mr-4 items-center">
                 <div className="hidden lg:block text-right pr-4 border-r border-limestone/10">
                   <p className="text-[7px] text-limestone uppercase tracking-widest leading-none mb-1">Identity Verified</p>
-                  <p className="text-[9px] font-black text-neon truncate max-w-[120px]">{userProfile.email.split('@')[0]}</p>
+                  <p className="text-[9px] font-black text-neon truncate max-w-[120px]">{userProfile.full_name || userProfile.email.split('@')[0]}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-[7px] text-limestone uppercase tracking-widest leading-none mb-1">Scan</p>

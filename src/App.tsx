@@ -23,21 +23,21 @@ export default function App() {
       setSession(session);
       
       if (session) {
-        // Try to fetch saved DNA vector from profile
+        // Try to fetch saved DNA vector from profile style_dna column
         const { data: profile } = await supabase!
           .from('profiles')
-          .select('dna_vector')
+          .select('style_dna')
           .eq('id', session.user.id)
           .single();
         
-        if (profile?.dna_vector) {
+        if (profile?.style_dna) {
           try {
-            const vector = typeof profile.dna_vector === 'string' 
-              ? JSON.parse(profile.dna_vector) 
-              : profile.dna_vector;
+            const vector = typeof profile.style_dna === 'string' 
+              ? JSON.parse(profile.style_dna) 
+              : profile.style_dna;
             setUserVector(vector);
           } catch (e) {
-            console.error("Failed to parse saved DNA vector");
+            console.error("Failed to parse saved style DNA");
           }
         }
       }
@@ -58,9 +58,9 @@ export default function App() {
   const handleDiagnosticComplete = async (vector: [number, number, number, number]) => {
     setUserVector(vector);
     
-    // If logged in, save the new DNA vector to profile
+    // If logged in, save the new style DNA to profile
     if (session) {
-      await supabase?.from('profiles').update({ dna_vector: vector }).eq('id', session.user.id);
+      await supabase?.from('profiles').update({ style_dna: vector }).eq('id', session.user.id);
     }
 
     // Simulate high-end calculation delay
@@ -75,6 +75,7 @@ export default function App() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -92,7 +93,8 @@ export default function App() {
           options: {
             emailRedirectTo: window.location.origin,
             data: {
-              dna_vector: userVector || [0.25, 0.25, 0.25, 0.25]
+              full_name: username,
+              style_dna: userVector || [0.25, 0.25, 0.25, 0.25]
             }
           }
         });
@@ -109,10 +111,10 @@ export default function App() {
         if (error) throw error;
         if (data.session) {
           setSession(data.session);
-          // Fetch DNA vector after sign in
-          const { data: profile } = await supabase.from("profiles").select("dna_vector").eq("id", data.session.user.id).single();
-          if (profile?.dna_vector) {
-            const vector = typeof profile.dna_vector === "string" ? JSON.parse(profile.dna_vector) : profile.dna_vector;
+          // Fetch DNA vector after sign in from style_dna column
+          const { data: profile } = await supabase.from("profiles").select("style_dna").eq("id", data.session.user.id).single();
+          if (profile?.style_dna) {
+            const vector = typeof profile.style_dna === "string" ? JSON.parse(profile.style_dna) : profile.style_dna;
             setUserVector(vector);
           }
           setView("vault");
@@ -140,14 +142,14 @@ export default function App() {
       } else {
         const { data: profile } = await supabase!
           .from('profiles')
-          .select('dna_vector')
+          .select('style_dna')
           .eq('id', session.user.id)
           .single();
         
-        if (profile?.dna_vector) {
-          const vector = typeof profile.dna_vector === 'string' 
-            ? JSON.parse(profile.dna_vector) 
-            : profile.dna_vector;
+        if (profile?.style_dna) {
+          const vector = typeof profile.style_dna === 'string' 
+            ? JSON.parse(profile.style_dna) 
+            : profile.style_dna;
           setUserVector(vector);
           setView("vault");
         } else {
@@ -290,6 +292,18 @@ export default function App() {
                 </p>
 
                 <form onSubmit={handleEmailAuth} className="w-full space-y-4 mb-6">
+                  {authMode === "signup" && (
+                    <div className="space-y-1">
+                      <input 
+                        type="text" 
+                        placeholder="UNIQUE USERNAME"
+                        required
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="w-full bg-graphite border border-limestone/20 p-4 text-[10px] font-mono text-neon placeholder:text-limestone/30 focus:border-neon outline-none transition-all uppercase"
+                      />
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <input 
                       type="email" 
