@@ -479,7 +479,7 @@ Return ONLY the rows.`;
       {/* Dynamic Header */}
       <div className="px-6 md:px-24 pt-12 md:pt-16 pb-8 border-b border-neon/5 bg-basalt/30 backdrop-blur-sm">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-8 md:gap-12 mb-12 md:mb-16">
-          <h2 className="text-4xl sm:text-6xl md:text-8xl font-serif font-black text-neon tracking-tighter uppercase leading-none text-center lg:text-left">
+                  <h2 className="text-4xl sm:text-6xl md:text-8xl font-serif font-black text-obsidian tracking-tighter uppercase leading-none text-center lg:text-left">
             {activeTab === "recommendations" ? "Vault" : (activeTab === "batch" ? "Synthesis" : "Vision Engine")}
           </h2>
           <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
@@ -493,7 +493,7 @@ Return ONLY the rows.`;
                 </button>
                 <div className="hidden lg:block text-right pr-6 md:pr-12 border-r border-neon/10">
                   <p className="text-[9px] text-neon/40 uppercase tracking-[0.4em] leading-none mb-3 font-black">Account</p>
-                  <p className="text-sm font-black text-neon truncate max-w-[150px] md:max-w-[200px] tracking-tight">{userProfile.full_name || userProfile.email.split('@')[0]}</p>
+                  <p className="text-sm font-black text-obsidian truncate max-w-[150px] md:max-w-[200px] tracking-tight">{userProfile.full_name || userProfile.email.split('@')[0]}</p>
                 </div>
                 <div className="text-center md:text-right">
                   <p className="text-[9px] text-neon/40 uppercase tracking-[0.4em] leading-none mb-2 md:mb-3 font-black">Scan</p>
@@ -657,15 +657,26 @@ Return ONLY the rows.`;
                     </div>
 
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-                      {batchedOutfit.matches.map(item => (
-                        <div key={item.id} className="group relative border border-[#D3D3D3]/40 p-8 flex flex-col items-center hover:border-neon/30 transition-all duration-700 shadow-[0_0_10px_rgba(211,211,211,0.1)] rounded-none">
-                          <img 
-                            src={item.image_url} 
-                            className="w-full h-[400px] object-cover mb-8 shadow-xl rounded-none transition-all duration-700 group-hover:scale-105" 
-                            referrerPolicy="no-referrer"
-                          />
+                      {batchedOutfit.matches.map((item, idx) => (
+                        <motion.div 
+                          key={item.id} 
+                          initial={{ opacity: 0, y: 30 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ 
+                            delay: (idx + 1) * 0.3, 
+                            duration: 0.5, 
+                            ease: [0.4, 0, 0.2, 1] 
+                          }}
+                          className="group relative border border-taupe p-8 flex flex-col items-center hover:border-neon/30 transition-all duration-700 shadow-[0_0_10px_rgba(211,211,211,0.1)] rounded-none"
+                        >
+                        <motion.img 
+                          whileHover={{ scale: 1.05 }}
+                          src={item.image_url} 
+                          className="w-full h-[400px] object-cover mb-8 shadow-xl rounded-none transition-all duration-700" 
+                          referrerPolicy="no-referrer"
+                        />
                           <p className="text-[10px] font-black text-neon/40 uppercase tracking-[0.5em] mb-3 leading-none italic">{item.brand_name}</p>
-                          <h6 className="text-xl font-serif font-black text-neon uppercase mb-4 text-center tracking-tight leading-none">{item.item_name}</h6>
+                          <h6 className="text-xl font-serif font-black text-obsidian uppercase mb-4 text-center tracking-tight leading-none">{item.item_name}</h6>
                           <div className="w-12 h-[1px] bg-neon/20 mb-4" />
                           <p className="text-[11px] font-mono text-neon/60 uppercase tracking-widest mb-6">{item.category}</p>
                           
@@ -678,7 +689,7 @@ Return ONLY the rows.`;
                           >
                             Open Product Link
                           </a>
-                        </div>
+                        </motion.div>
                       ))}
                     </div>
 
@@ -774,17 +785,23 @@ Return ONLY the rows.`;
                     {displayedItems.map((item, idx) => (
                       <motion.div
                         key={item.id}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 40 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ delay: idx * 0.01 }}
-                        className="group flex flex-col"
+                        transition={{ 
+                          delay: (idx % 12) * 0.3, 
+                          duration: 0.5, 
+                          ease: [0.4, 0, 0.2, 1] 
+                        }}
+                        whileHover={{ scale: 1.02 }}
+                        className="group flex flex-col cursor-pointer"
                       >
-                        <div className="w-full aspect-[3/4] flex-shrink-0 relative overflow-hidden mb-8 border border-[#D3D3D3] group-hover:border-neon shadow-[0_0_10px_rgba(211,211,211,0.2)] transition-all duration-700 rounded-none">
-                          <img 
+                        <div className="w-full aspect-[3/4] flex-shrink-0 relative overflow-hidden mb-8 border border-taupe group-hover:border-neon shadow-[0_0_10px_rgba(211,211,211,0.2)] transition-all duration-700 rounded-none hover:shadow-[0_0_50px_rgba(180,250,50,0.15)]">
+                          <motion.img 
+                            whileHover={{ scale: 1.08 }}
                             src={item.image_url} 
                             alt={item.item_name}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-all duration-[1500ms] rounded-none"
+                            className="w-full h-full object-cover transition-all duration-1000 rounded-none"
                             referrerPolicy="no-referrer"
                           />
                           <div className="absolute top-4 left-4 bg-basalt/80 backdrop-blur-md text-neon text-[9px] font-black px-3 py-1 tracking-[0.2em] border border-neon/20 rounded-none">
@@ -812,7 +829,7 @@ Return ONLY the rows.`;
 
                         <div className="flex flex-col items-center text-center">
                           <p className="text-[10px] font-black text-neon/40 uppercase tracking-[0.6em] mb-3 italic">{item.brand_name || "Nexus Unit"}</p>
-                          <h5 className="text-xl md:text-2xl font-serif font-black text-neon leading-none tracking-tighter mb-4 uppercase">{item.item_name}</h5>
+                          <h5 className="text-xl md:text-2xl font-serif font-black text-obsidian leading-none tracking-tighter mb-4 uppercase">{item.item_name}</h5>
                           <div className="flex flex-col items-center gap-4">
                             <span className="text-lg font-mono text-neon font-bold tracking-tighter">
                               {formatCurrency(item.price)}

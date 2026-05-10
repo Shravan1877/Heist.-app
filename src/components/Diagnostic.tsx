@@ -12,22 +12,28 @@ export default function Diagnostic({ onComplete }: DiagnosticProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [isFinished, setIsFinished] = useState(false);
+  const [clickedOption, setClickedOption] = useState<number | null>(null);
 
   const currentQuestion = QUESTIONS[currentIndex];
   const progress = ((currentIndex + 1) / QUESTIONS.length) * 100;
 
   const handleSelect = (optionIndex: number) => {
+    setClickedOption(optionIndex);
     const newAnswers = [...answers];
     newAnswers[currentIndex] = optionIndex;
     setAnswers(newAnswers);
 
-    if (currentIndex < QUESTIONS.length - 1) {
-      setTimeout(() => setCurrentIndex(currentIndex + 1), 300);
-    } else {
-      setIsFinished(true);
-      const vector = calculateVector(newAnswers);
-      onComplete(vector);
-    }
+    // 0.4s wait for ripple and mental processing before sliding
+    setTimeout(() => {
+      setClickedOption(null);
+      if (currentIndex < QUESTIONS.length - 1) {
+        setCurrentIndex(currentIndex + 1);
+      } else {
+        setIsFinished(true);
+        const vector = calculateVector(newAnswers);
+        onComplete(vector);
+      }
+    }, 500);
   };
 
   const handleBack = () => {
@@ -80,42 +86,57 @@ export default function Diagnostic({ onComplete }: DiagnosticProps) {
       </div>
 
       {/* Question */}
-      <div className="mb-20">
+      <div className="mb-20 overflow-hidden">
         <h2 className="text-white text-2xl md:text-3xl font-medium mb-16 leading-tight tracking-tight">
           {currentQuestion.question}
         </h2>
 
-        <div className="space-y-6">
+        <div className="relative">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.02 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
+              initial={{ opacity: 0, x: 150 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -150 }}
+              transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
               className="grid grid-cols-1 md:grid-cols-2 gap-6"
             >
               {currentQuestion.options.map((option, idx) => (
                 <button
                   key={idx}
                   id={`option-${idx}`}
+                  disabled={clickedOption !== null}
                   onClick={() => handleSelect(idx)}
                   className={cn(
-                    "group text-left p-10 border border-neon/10 bg-neon/5 hover:bg-neon/10 hover:border-neon transition-all duration-500 relative overflow-hidden",
-                    answers[currentIndex] === idx && "bg-neon/20 border-neon shadow-[0_0_40px_rgba(180,250,50,0.1)]"
+                    "group text-left p-10 border border-neon/10 bg-neon/5 hover:bg-neon/10 hover:border-neon transition-all duration-700 relative overflow-hidden",
+                    (answers[currentIndex] === idx || clickedOption === idx) && "bg-neon/20 border-neon shadow-[0_0_40px_rgba(180,250,50,0.1)]"
                   )}
                 >
-                  <div className="flex justify-between items-center relative z-10">
+                  <div className="flex justify-between items-center relative z-10 pointer-events-none">
                     <span className="text-lg md:text-xl text-neon group-hover:text-white transition-colors leading-tight font-black uppercase tracking-tight">
                       {option.text}
                     </span>
-                    {answers[currentIndex] === idx && (
+                    {(answers[currentIndex] === idx || clickedOption === idx) && (
                       <div className="w-3 h-3 bg-neon shadow-[0_0_15px_rgba(180,250,50,0.8)] animate-pulse" />
                     )}
                   </div>
                   
+                  {/* Ripple Effect */}
+                  <AnimatePresence>
+                    {clickedOption === idx && (
+                      <motion.div 
+                        initial={{ scale: 0, opacity: 0.3 }}
+                        animate={{ scale: 4, opacity: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        className="absolute inset-0 bg-neon/40 rounded-full z-0 pointer-events-none"
+                        style={{ width: '100px', height: '100px', top: '50%', left: '50%', marginTop: '-50px', marginLeft: '-50px' }}
+                      />
+                    )}
+                  </AnimatePresence>
+
                   {/* Subtle hover background effect */}
-                  <div className="absolute inset-0 bg-neon/5 translate-y-full group-hover:translate-y-0 transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-neon/5 translate-y-full group-hover:translate-y-0 transition-transform duration-1000 z-0" />
                 </button>
               ))}
             </motion.div>
