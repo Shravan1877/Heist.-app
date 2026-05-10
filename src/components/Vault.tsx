@@ -721,7 +721,47 @@ Return ONLY the rows.`;
                   </div>
                 )}
               </motion.div>
-            ) : activeTab === "vision" && !visionVector && !isVisionScanning ? (
+            ) : isVisionScanning ? (
+              <motion.div
+                key="vision-scanning"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="py-40 flex flex-col items-center justify-center text-center space-y-12"
+              >
+                <div className="relative w-64 h-64 border border-neon/20 overflow-hidden">
+                  <div className="absolute inset-0 bg-neon/[0.03]" />
+                  {/* Scanning Grid */}
+                  <div className="absolute inset-0 grid grid-cols-8 grid-rows-8 opacity-20">
+                    {Array.from({ length: 64 }).map((_, i) => (
+                      <div key={i} className="border-[0.5px] border-neon/10" />
+                    ))}
+                  </div>
+                  {/* Kinetic Scanning Line */}
+                  <motion.div 
+                    initial={{ top: "-10%" }}
+                    animate={{ top: "110%" }}
+                    transition={{ 
+                      repeat: Infinity, 
+                      duration: 3, 
+                      ease: "linear" 
+                    }}
+                    className="absolute left-0 right-0 h-[2px] bg-neon shadow-[0_0_20px_rgba(180,250,50,0.8)] z-10"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Scan className="w-12 h-12 text-neon/40" />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <p className="text-neon text-sm uppercase tracking-[0.8em] font-black animate-pulse">
+                    Optical Analysis in Progress...
+                  </p>
+                  <p className="text-neon/30 text-[10px] uppercase tracking-[0.4em]">
+                    Synchronizing Style DNA with Global Archives
+                  </p>
+                </div>
+              </motion.div>
+            ) : activeTab === "vision" && !visionVector ? (
               <motion.div
                 key="vision-upload"
                 initial={{ opacity: 0, y: 50 }}
