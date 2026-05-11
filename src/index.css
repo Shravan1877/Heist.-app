@@ -38,27 +38,46 @@
 }
 
 @keyframes pulse-glow {
-  0% { box-shadow: 0 0 20px rgba(180, 250, 50, 0.1); }
-  50% { box-shadow: 0 0 50px rgba(180, 250, 50, 0.3); }
-  100% { box-shadow: 0 0 20px rgba(180, 250, 50, 0.1); }
+  0% { opacity: 0.1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(1.05); }
+  100% { opacity: 0.1; transform: scale(1); }
 }
 
 @keyframes slow-float {
-  0% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(5deg); }
-  100% { transform: translateY(0) rotate(0deg); }
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50% { transform: translate3d(0, -20px, 0) rotate(5deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+}
+
+.pulse-glow::after {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(circle, rgba(204, 255, 0, 0.4) 0%, transparent 70%);
+  animation: pulse-glow 4s infinite var(--ease-weighted);
+  pointer-events: none;
+  z-index: -1;
+  will-change: opacity, transform;
 }
 
 .pulse-glow {
-  animation: pulse-glow 4s infinite var(--ease-weighted);
+  position: relative;
+  overflow: visible !important;
 }
 
 .slow-float {
   animation: slow-float 20s infinite linear;
+  will-change: transform;
+}
+
+.gpu-accelerated {
+  transform: translate3d(0,0,0);
+  will-change: transform, opacity;
 }
 
 .mask-reveal {
   overflow: hidden;
+  will-change: transform;
 }
 
 .mask-reveal-inner {

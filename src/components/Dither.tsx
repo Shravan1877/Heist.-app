@@ -64,11 +64,12 @@ float cnoise(vec2 P) {
   return 2.3 * mix(n_x.x, n_x.y, fade_xy.y);
 }
 
-const int OCTAVES = 4;
+const int OCTAVES = 2;
 float fbm(vec2 p, float waveFrequency, float waveAmplitude) {
   float value = 0.0;
   float amp = 1.0;
   float freq = waveFrequency;
+  // Use fewer octaves for basic noise to save fragment cycles
   for (int i = 0; i < OCTAVES; i++) {
     value += amp * abs(cnoise(p));
     p *= freq;
@@ -213,6 +214,7 @@ function DitheredWaves({
   mouseRadius
 }: DitheredWavesProps) {
   const mesh = useRef<THREE.Mesh>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef(new THREE.Vector2());
   const { viewport, size, gl } = useThree();
 
@@ -230,14 +232,20 @@ function DitheredWaves({
   });
 
   useEffect(() => {
-    const dpr = gl.getPixelRatio();
-    const newWidth = Math.floor(size.width * dpr);
-    const newHeight = Math.floor(size.height * dpr);
-    const currentRes = waveUniformsRef.current.resolution.value;
-    if (currentRes.x !== newWidth || currentRes.y !== newHeight) {
-      currentRes.set(newWidth, newHeight);
-    }
-  }, [size, gl]);
+    const handleResize = () => {
+      const dpr = gl.getPixelRatio();
+      const newWidth = Math.floor(size.width * dpr);
+      const newHeight = Math.floor(size.height * dpr);
+      const currentRes = waveUniformsRef.current.resolution.value;
+      if (currentRes.x !== newWidth || currentRes.y !== newHeight) {
+        currentRes.set(newWidth, newHeight);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [size.width, size.height, gl]);
 
   const prevColor = useRef([...waveColor]);
   useFrame(({ clock }) => {
@@ -334,10 +342,14 @@ export default function Dither({
 }: DitherProps) {
   return (
     <Canvas
-      className="dither-container"
+      className="dither-container gpu-accelerated"
       camera={{ position: [0, 0, 6] }}
-      dpr={1}
-      gl={{ antialias: true, preserveDrawingBuffer: true }}
+      dpr={typeof window !== 'undefined' && window.devicePixelRatio > 1 ? 1.5 : 1}
+      gl={{ 
+        antialias: false, 
+        preserveDrawingBuffer: true,
+        powerPreference: "high-performance"
+      }}
     >
       <DitheredWaves
         waveSpeed={waveSpeed}

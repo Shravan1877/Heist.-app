@@ -667,7 +667,7 @@ Return ONLY the rows.`;
                             duration: 0.5, 
                             ease: [0.4, 0, 0.2, 1] 
                           }}
-                          className="group relative border border-taupe p-8 flex flex-col items-center hover:border-neon/30 transition-all duration-700 shadow-[0_0_10px_rgba(211,211,211,0.1)] rounded-none"
+                          className="group relative border border-taupe p-8 flex flex-col items-center hover:border-neon/30 transition-all duration-700 shadow-[0_0_10px_rgba(211,211,211,0.1)] rounded-none gpu-accelerated"
                         >
                         <motion.img 
                           whileHover={{ scale: 1.05 }}
@@ -746,7 +746,7 @@ Return ONLY the rows.`;
                       duration: 3, 
                       ease: "linear" 
                     }}
-                    className="absolute left-0 right-0 h-[2px] bg-neon shadow-[0_0_20px_rgba(180,250,50,0.8)] z-10"
+                    className="absolute left-0 right-0 h-[2px] bg-neon shadow-[0_0_20px_rgba(180,250,50,0.8)] z-10 will-change-[top]"
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Scan className="w-12 h-12 text-neon/40" />
@@ -834,7 +834,7 @@ Return ONLY the rows.`;
                           ease: [0.4, 0, 0.2, 1] 
                         }}
                         whileHover={{ scale: 1.02 }}
-                        className="group flex flex-col cursor-pointer"
+                        className="group flex flex-col cursor-pointer gpu-accelerated"
                       >
                         <div className="w-full aspect-[3/4] flex-shrink-0 relative overflow-hidden mb-8 border border-taupe group-hover:border-neon shadow-[0_0_10px_rgba(211,211,211,0.2)] transition-all duration-700 rounded-none hover:shadow-[0_0_50px_rgba(180,250,50,0.15)]">
                           <motion.img 

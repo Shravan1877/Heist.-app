@@ -253,7 +253,7 @@ export default function App() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
-                className="px-12 md:px-24 py-32 flex flex-col items-center justify-center min-h-[calc(100vh-160px)] text-center relative"
+                className="px-12 md:px-24 py-32 flex flex-col items-center justify-center min-h-[calc(100vh-160px)] text-center relative gpu-accelerated"
               >
                 <Dither 
                   waveColor={theme === "dark" ? [0.8, 1.0, 0.0] : [0.15, 0.85, 0.02]}
@@ -268,14 +268,14 @@ export default function App() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2, duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
-                    className="flex items-center gap-4 mb-12"
+                    className="flex items-center gap-4 mb-12 gpu-accelerated"
                   >
                     <div className="h-[1px] w-16 bg-neon" />
                     <span className="text-xs tracking-[0.8em] text-neon font-black uppercase drop-shadow-md">Monarchy v1.0 [Full Canvas]</span>
                     <div className="h-[1px] w-16 bg-neon" />
                   </motion.div>
                   
-                  <div className="mask-reveal overflow-hidden mb-8 md:mb-16">
+                  <div className="mask-reveal overflow-hidden mb-8 md:mb-16 gpu-accelerated">
                     <motion.h1 
                       initial={{ y: "110%" }}
                       animate={{ y: 0 }}
