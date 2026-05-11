@@ -91,6 +91,66 @@
   display: block;
 }
 
+/* CSS Scroll-Driven Animations */
+.animated-list-container {
+  position: relative;
+  --basalt: #121212;
+}
+
+.animated-list-container::before,
+.animated-list-container::after {
+  content: '';
+  position: sticky;
+  left: 0;
+  right: 0;
+  height: 120px;
+  z-index: 10;
+  pointer-events: none;
+  will-change: opacity;
+}
+
+.animated-list-container::before {
+  top: 0;
+  background: linear-gradient(to bottom, var(--basalt) 0%, transparent 100%);
+}
+
+.animated-list-container::after {
+  bottom: 0;
+  background: linear-gradient(to top, var(--basalt) 0%, transparent 100%);
+  margin-top: -120px;
+}
+
+.animated-list-item {
+  view-timeline-name: --item-reveal;
+  view-timeline-axis: block;
+  animation-linear-direction: alternate;
+  animation-name: reveal;
+  animation-fill-mode: both;
+  animation-timeline: --item-reveal;
+  animation-range: entry 10% cover 40%;
+  will-change: transform, opacity;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translate3d(0, 40px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+.zinc-border-selected {
+  border-color: #CCFF00 !important;
+  box-shadow: 0 0 30px rgba(204, 255, 0, 0.2);
+}
+
+.matte-charcoal-card {
+  background-color: #1a1a1a;
+}
+
 @layer utilities {
   .text-stroke-thin {
     -webkit-text-fill-color: currentColor;

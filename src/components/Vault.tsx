@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { cn, formatCurrency } from "../lib/utils";
 import { ExternalLink, Camera, Sparkles, RefreshCcw, LayoutGrid, Scan, ChevronRight } from "lucide-react";
 import { getAestheticIdentity } from "../logic/calculator";
+import { AnimatedList, AnimatedListItem } from "./AnimatedList";
 // Gemini API is now handled via server proxy to fix browser-only key issues on Vercel
 // import { GoogleGenAI } from "@google/genai";
 
@@ -821,66 +822,121 @@ Return ONLY the rows.`;
                     ))}
                   </div>
                 ) : displayedItems.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-10 gap-y-20">
-                    {displayedItems.map((item, idx) => (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ 
-                          delay: (idx % 12) * 0.3, 
-                          duration: 0.5, 
-                          ease: [0.4, 0, 0.2, 1] 
-                        }}
-                        whileHover={{ scale: 1.02 }}
-                        className="group flex flex-col cursor-pointer gpu-accelerated"
-                      >
-                        <div className="w-full aspect-[3/4] flex-shrink-0 relative overflow-hidden mb-8 border border-taupe group-hover:border-neon shadow-[0_0_10px_rgba(211,211,211,0.2)] transition-all duration-700 rounded-none hover:shadow-[0_0_50px_rgba(180,250,50,0.15)]">
-                          <motion.img 
-                            whileHover={{ scale: 1.08 }}
-                            src={item.image_url} 
-                            alt={item.item_name}
-                            className="w-full h-full object-cover transition-all duration-1000 rounded-none"
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="absolute top-4 left-4 bg-basalt/80 backdrop-blur-md text-neon text-[9px] font-black px-3 py-1 tracking-[0.2em] border border-neon/20 rounded-none">
-                            COORD_{Math.round((item.similarity || 0) * 100)}
-                          </div>
-                          
-                          {/* Hover Controls Overlay */}
-                          <div className="absolute inset-0 bg-basalt/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center gap-4 backdrop-blur-sm rounded-none px-6">
-                            <a 
-                              href={item.product_link} 
-                              target="_blank" 
-                              onClick={() => trackInteraction(item.id, 'link_click')}
-                              className="w-full py-4 bg-neon text-basalt rounded-none flex items-center justify-center gap-2 hover:bg-white transition-all shadow-2xl text-[10px] font-black uppercase tracking-[0.3em]"
-                            >
-                              Open Link
-                            </a>
-                            <button 
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); trackInteraction(item.id, 'batch_click'); handleMatchAndBatch(item); }}
-                              className="w-full py-4 bg-white text-basalt rounded-none flex items-center justify-center gap-2 hover:bg-neon transition-all shadow-2xl text-[10px] font-black uppercase tracking-[0.3em]"
-                            >
-                              Curate an outfit
-                            </button>
-                          </div>
-                        </div>
+                  activeTab === "vision" ? (
+                    <AnimatedList className="max-w-4xl mx-auto">
+                      {displayedItems.map((item) => (
+                        <AnimatedListItem key={item.id}>
+                          <div className="w-full flex flex-col md:flex-row gap-12 items-center">
+                            <div className="w-full md:w-1/3 aspect-[3/4] relative overflow-hidden border border-taupe shadow-[0_0_10px_rgba(211,211,211,0.2)]">
+                              <img 
+                                src={item.image_url} 
+                                alt={item.item_name}
+                                className="w-full h-full object-cover"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="absolute top-4 left-4 bg-basalt/80 backdrop-blur-md text-neon text-[9px] font-black px-3 py-1 tracking-[0.2em] border border-neon/20">
+                                MATCH_{Math.round((item.similarity || 0) * 100)}
+                              </div>
+                            </div>
 
-                        <div className="flex flex-col items-center text-center">
-                          <p className="text-[10px] font-black text-neon/40 uppercase tracking-[0.6em] mb-3 italic">{item.brand_name || "Nexus Unit"}</p>
-                          <h5 className="text-xl md:text-2xl font-serif font-black text-obsidian leading-none tracking-tighter mb-4 uppercase">{item.item_name}</h5>
-                          <div className="flex flex-col items-center gap-4">
-                            <span className="text-lg font-mono text-neon font-bold tracking-tighter">
-                              {formatCurrency(item.price)}
-                            </span>
-                            <div className="w-10 h-[1px] bg-neon/10 group-hover:w-full transition-all duration-1000" />
-                            <p className="text-[10px] text-neon/20 uppercase tracking-[0.3em] font-black">{item.category}</p>
+                            <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left space-y-6">
+                              <div>
+                                <p className="text-[10px] font-black text-neon/40 uppercase tracking-[0.6em] mb-2 italic">{item.brand_name || "Nexus Unit"}</p>
+                                <h5 className="text-3xl md:text-4xl font-serif font-black text-obsidian leading-none tracking-tighter uppercase">{item.item_name}</h5>
+                              </div>
+                              
+                              <div className="flex items-center gap-6">
+                                <span className="text-2xl font-mono text-neon font-bold tracking-tighter">
+                                  {formatCurrency(item.price)}
+                                </span>
+                                <div className="h-4 w-[1px] bg-neon/20" />
+                                <p className="text-xs text-neon/40 uppercase tracking-[0.3em] font-black">{item.category}</p>
+                              </div>
+
+                              <div className="flex flex-wrap gap-4 pt-4">
+                                <a 
+                                  href={item.product_link} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  onClick={() => trackInteraction(item.id, 'link_click')}
+                                  className="px-8 py-4 bg-neon text-basalt text-[10px] font-black uppercase tracking-[0.3em] hover:bg-white transition-all shadow-2xl"
+                                >
+                                  Acquire Item
+                                </a>
+                                <button 
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); trackInteraction(item.id, 'batch_click'); handleMatchAndBatch(item); }}
+                                  className="px-8 py-4 bg-white text-basalt text-[10px] font-black uppercase tracking-[0.3em] hover:bg-neon transition-all shadow-2xl"
+                                >
+                                  Synthesis
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
+                        </AnimatedListItem>
+                      ))}
+                    </AnimatedList>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-10 gap-y-20">
+                      {displayedItems.map((item, idx) => (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, y: 40 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ 
+                            delay: (idx % 12) * 0.3, 
+                            duration: 0.5, 
+                            ease: [0.4, 0, 0.2, 1] 
+                          }}
+                          whileHover={{ scale: 1.02 }}
+                          className="group flex flex-col cursor-pointer gpu-accelerated"
+                        >
+                          <div className="w-full aspect-[3/4] flex-shrink-0 relative overflow-hidden mb-8 border border-taupe group-hover:border-neon shadow-[0_0_10px_rgba(211,211,211,0.2)] transition-all duration-700 rounded-none hover:shadow-[0_0_50px_rgba(180,250,50,0.15)]">
+                            <motion.img 
+                              whileHover={{ scale: 1.08 }}
+                              src={item.image_url} 
+                              alt={item.item_name}
+                              className="w-full h-full object-cover transition-all duration-1000 rounded-none"
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="absolute top-4 left-4 bg-basalt/80 backdrop-blur-md text-neon text-[9px] font-black px-3 py-1 tracking-[0.2em] border border-neon/20 rounded-none">
+                              COORD_{Math.round((item.similarity || 0) * 100)}
+                            </div>
+                            
+                            {/* Hover Controls Overlay */}
+                            <div className="absolute inset-0 bg-basalt/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center gap-4 backdrop-blur-sm rounded-none px-6">
+                              <a 
+                                href={item.product_link} 
+                                target="_blank" 
+                                onClick={() => trackInteraction(item.id, 'link_click')}
+                                className="w-full py-4 bg-neon text-basalt rounded-none flex items-center justify-center gap-2 hover:bg-white transition-all shadow-2xl text-[10px] font-black uppercase tracking-[0.3em]"
+                              >
+                                Open Link
+                              </a>
+                              <button 
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); trackInteraction(item.id, 'batch_click'); handleMatchAndBatch(item); }}
+                                className="w-full py-4 bg-white text-basalt rounded-none flex items-center justify-center gap-2 hover:bg-neon transition-all shadow-2xl text-[10px] font-black uppercase tracking-[0.3em]"
+                              >
+                                Curate an outfit
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-center text-center">
+                            <p className="text-[10px] font-black text-neon/40 uppercase tracking-[0.6em] mb-3 italic">{item.brand_name || "Nexus Unit"}</p>
+                            <h5 className="text-xl md:text-2xl font-serif font-black text-obsidian leading-none tracking-tighter mb-4 uppercase">{item.item_name}</h5>
+                            <div className="flex flex-col items-center gap-4">
+                              <span className="text-lg font-mono text-neon font-bold tracking-tighter">
+                                {formatCurrency(item.price)}
+                              </span>
+                              <div className="w-10 h-[1px] bg-neon/10 group-hover:w-full transition-all duration-1000" />
+                              <p className="text-[10px] text-neon/20 uppercase tracking-[0.3em] font-black">{item.category}</p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )
                 ) : (
                   <div className="py-40 text-center space-y-10">
                     <p className="text-neon/30 text-2xl uppercase tracking-[1em] italic font-black">{error || "Signal Exhausted. Vault Empty."}</p>
