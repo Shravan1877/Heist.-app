@@ -12,7 +12,7 @@ import { supabase } from "./lib/supabase";
 import { cn } from "./lib/utils";
 import { Session } from "@supabase/supabase-js";
 
-import GeometricBackground from "./components/GeometricBackground";
+import Dither from "./components/Dither";
 
 export default function App() {
   const [view, setView] = useState<"home" | "diagnostic" | "vault" | "auth_required">("home");
@@ -255,7 +255,14 @@ export default function App() {
                 transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
                 className="px-12 md:px-24 py-32 flex flex-col items-center justify-center min-h-[calc(100vh-160px)] text-center relative"
               >
-                <GeometricBackground />
+                <Dither 
+                  waveColor={theme === "dark" ? [0.8, 1.0, 0.0] : [0.15, 0.85, 0.02]}
+                  bgColor={theme === "dark" ? [0.07, 0.07, 0.07] : [0.968, 0.968, 0.949]}
+                  waveSpeed={0.02}
+                  waveAmplitude={0.15}
+                  colorNum={4}
+                  pixelSize={2}
+                />
                 <div className="max-w-5xl w-full flex flex-col items-center relative z-10">
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
@@ -264,7 +271,7 @@ export default function App() {
                     className="flex items-center gap-4 mb-12"
                   >
                     <div className="h-[1px] w-16 bg-neon" />
-                    <span className="text-xs tracking-[0.8em] text-neon font-black uppercase">Monarchy v1.0 [Full Canvas]</span>
+                    <span className="text-xs tracking-[0.8em] text-neon font-black uppercase drop-shadow-md">Monarchy v1.0 [Full Canvas]</span>
                     <div className="h-[1px] w-16 bg-neon" />
                   </motion.div>
                   
@@ -273,7 +280,7 @@ export default function App() {
                       initial={{ y: "110%" }}
                       animate={{ y: 0 }}
                       transition={{ duration: 1.2, ease: [0.4, 0, 0.2, 1], delay: 0.4 }}
-                      className="text-7xl sm:text-9xl md:text-[220px] font-serif font-black leading-[0.75] tracking-[-0.07em] uppercase break-words px-4"
+                      className="text-7xl sm:text-9xl md:text-[220px] font-serif font-black leading-[0.75] tracking-[-0.07em] uppercase break-words px-4 text-stroke-thin"
                     >
                       HEIST.
                     </motion.h1>
@@ -290,7 +297,7 @@ export default function App() {
                         }
                       }
                     }}
-                    className="space-y-12 max-w-2xl"
+                    className="space-y-12 max-w-2xl px-4"
                   >
                     <motion.div 
                       variants={{
@@ -299,10 +306,10 @@ export default function App() {
                       }}
                       className="space-y-6"
                     >
-                      <h2 className="text-obsidian text-xl md:text-2xl font-serif font-black uppercase tracking-tight">
+                      <h2 className="text-obsidian text-xl md:text-2xl font-serif font-black uppercase tracking-tight text-stroke-sm">
                         The Mission
                       </h2>
-                      <p className="text-obsidian/80 text-lg md:text-xl font-medium leading-relaxed tracking-tight">
+                      <p className="text-obsidian/80 text-lg md:text-xl font-medium leading-relaxed tracking-tight text-stroke-sm">
                         HEIST. It's not just another shop; it’s a platform for the best homegrown fashion brands, many hidden gems stay hidden, and it's time to change it. We don't dump thousands of items on you. We curate your specific vibe.
                       </p>
                     </motion.div>
@@ -315,10 +322,10 @@ export default function App() {
                       className="space-y-6"
                     >
                       <div className="h-[1px] w-full bg-neon/10" />
-                      <h2 className="text-obsidian text-xl md:text-2xl font-serif font-black uppercase tracking-tight">
+                      <h2 className="text-obsidian text-xl md:text-2xl font-serif font-black uppercase tracking-tight text-stroke-sm">
                         The Technology
                       </h2>
-                      <p className="text-obsidian/80 text-lg md:text-xl font-medium leading-relaxed tracking-tight">
+                      <p className="text-obsidian/80 text-lg md:text-xl font-medium leading-relaxed tracking-tight text-stroke-sm">
                         Using a state-of-the-art Style DNA Quiz, our AI maps your exact aesthetic preferences to create a personalized digital wardrobe. No noise, just your style.
                       </p>
                     </motion.div>
@@ -342,7 +349,7 @@ export default function App() {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 2.8, duration: 1, ease: [0.4, 0, 0.2, 1] }}
-                  className="mt-12 md:mt-24 flex flex-col sm:flex-row gap-4 md:gap-6 w-full max-w-2xl px-6"
+                  className="mt-12 md:mt-24 flex flex-col sm:flex-row gap-4 md:gap-6 w-full max-w-2xl px-6 relative z-10"
                 >
                   {!session ? (
                     <>

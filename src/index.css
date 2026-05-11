@@ -65,4 +65,21 @@
   display: block;
 }
 
+@layer utilities {
+  .text-stroke-thin {
+    -webkit-text-fill-color: currentColor;
+    -webkit-text-stroke: 1px rgba(0, 0, 0, 0.4);
+  }
+  .text-stroke-sm {
+    -webkit-text-fill-color: currentColor;
+    -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.3);
+  }
+  :is(.light) .text-stroke-thin {
+    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.2);
+  }
+  :is(.light) .text-stroke-sm {
+    -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.1);
+  }
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,900;1,400&family=JetBrains+Mono:wght@400;700&display=swap');
