@@ -12,7 +12,7 @@ import { supabase } from "./lib/supabase";
 import { cn } from "./lib/utils";
 import { Session } from "@supabase/supabase-js";
 
-import Dither from "./components/Dither";
+import GeometricBackground from "./components/GeometricBackground";
 
 export default function App() {
   const [view, setView] = useState<"home" | "diagnostic" | "vault" | "auth_required">("home");
@@ -255,14 +255,7 @@ export default function App() {
                 transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
                 className="px-12 md:px-24 py-32 flex flex-col items-center justify-center min-h-[calc(100vh-160px)] text-center relative gpu-accelerated"
               >
-                <Dither 
-                  waveColor={theme === "dark" ? [0.8, 1.0, 0.0] : [0.15, 0.85, 0.02]}
-                  bgColor={theme === "dark" ? [0.07, 0.07, 0.07] : [0.968, 0.968, 0.949]}
-                  waveSpeed={0.02}
-                  waveAmplitude={0.15}
-                  colorNum={4}
-                  pixelSize={2}
-                />
+                <GeometricBackground />
                 <div className="max-w-5xl w-full flex flex-col items-center relative z-10">
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
