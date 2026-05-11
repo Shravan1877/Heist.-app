@@ -49,6 +49,13 @@
   100% { transform: translate3d(0, 0, 0) rotate(0deg); }
 }
 
+@keyframes lush-ambient {
+  0% { transform: translate3d(-15%, -15%, 0) rotate(0deg) scale(1); }
+  33% { transform: translate3d(15%, 10%, 0) rotate(120deg) scale(1.1); }
+  66% { transform: translate3d(-10%, 15%, 0) rotate(240deg) scale(1.2); }
+  100% { transform: translate3d(-15%, -15%, 0) rotate(360deg) scale(1); }
+}
+
 .pulse-glow::after {
   content: '';
   position: absolute;

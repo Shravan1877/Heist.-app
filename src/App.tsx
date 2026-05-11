@@ -12,7 +12,7 @@ import { supabase } from "./lib/supabase";
 import { cn } from "./lib/utils";
 import { Session } from "@supabase/supabase-js";
 
-import GeometricBackground from "./components/GeometricBackground";
+import LushGradientBackground from "./components/LushGradientBackground";
 
 export default function App() {
   const [view, setView] = useState<"home" | "diagnostic" | "vault" | "auth_required">("home");
@@ -255,7 +255,7 @@ export default function App() {
                 transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
                 className="px-12 md:px-24 py-32 flex flex-col items-center justify-center min-h-[calc(100vh-160px)] text-center relative gpu-accelerated"
               >
-                <GeometricBackground />
+                <LushGradientBackground />
                 <div className="max-w-5xl w-full flex flex-col items-center relative z-10">
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
