@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { supabase } from "../lib/supabase";
 import { cn, formatCurrency } from "../lib/utils";
 import { ExternalLink, Camera, Sparkles, RefreshCcw, LayoutGrid, Scan, ChevronRight } from "lucide-react";
-import { getAestheticIdentity } from "../logic/calculator";
+import { getAestheticIdentity, safeParseVector } from "../logic/calculator";
 import { AnimatedList, AnimatedListItem } from "./AnimatedList";
 // Gemini API is now handled via server proxy to fix browser-only key issues on Vercel
 // import { GoogleGenAI } from "@google/genai";
@@ -99,16 +99,7 @@ export default function Vault({ userVector, initialTab, onSignOut, onRetakeQuiz 
   };
 
   const parseVector = (v: any): number[] => {
-    if (Array.isArray(v)) return v;
-    if (typeof v === 'string') {
-      try {
-        return JSON.parse(v);
-      } catch (e) {
-        // If string but not JSON (e.g. "(0.1, 0.2...)")
-        return v.replace(/[()\[\]]/g, '').split(',').map(Number);
-      }
-    }
-    return [0.25, 0.25, 0.25, 0.25];
+    return safeParseVector(v);
   };
 
   // 1. Fetch Profile and ALL items once
@@ -218,9 +209,8 @@ export default function Vault({ userVector, initialTab, onSignOut, onRetakeQuiz 
         return { ...item, similarity, hasTagMatch };
       }).filter(item => item.hasTagMatch);
     } else if (activeTab === "recommendations") {
-      // Recommendation Engine: Pillar Priority Guardrail
+      // Recommendation Engine: Pure Vector Proximity
       filtered = filtered
-        .filter(item => (item.primary_pillar || "").toLowerCase() === majorityPillar)
         .map(item => {
           const itemVector = parseVector(item.dna_vector);
           return {
@@ -241,7 +231,7 @@ export default function Vault({ userVector, initialTab, onSignOut, onRetakeQuiz 
     } else if (sortOrder === "price_desc") {
       filtered.sort((a, b) => b.price - a.price);
     } else {
-      // Recommended (Monarchy Sort): Already prioritized by pillar, now sort by proximity
+      // Recommended: Sort by proximity in the style space using multi-dimensional vector similarity
       filtered.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
     }
 
@@ -478,7 +468,7 @@ Return ONLY the rows.`;
   return (
     <div className="flex flex-col h-full bg-basalt min-h-screen overflow-x-hidden">
       {/* Dynamic Header */}
-      <div className="px-6 md:px-24 pt-12 md:pt-16 pb-8 border-b border-neon/5 bg-basalt/30 backdrop-blur-sm">
+      <div className="px-6 md:px-24 pt-12 md:pt-16 pb-8 glass-card border-b border-neon/5 sticky top-0 z-50">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-8 md:gap-12 mb-12 md:mb-16">
                   <h2 className="text-4xl sm:text-6xl md:text-8xl font-serif font-black text-obsidian tracking-tighter uppercase leading-none text-center lg:text-left">
             {activeTab === "recommendations" ? "Vault" : (activeTab === "batch" ? "Synthesis" : "Vision Engine")}
@@ -488,7 +478,7 @@ Return ONLY the rows.`;
               <div className="flex gap-6 md:gap-12 items-center">
                 <button 
                   onClick={onRetakeQuiz}
-                  className="hidden xl:block px-6 py-3 border border-neon/30 text-[10px] text-neon uppercase tracking-[0.4em] hover:bg-neon hover:text-basalt transition-all duration-500 font-black shadow-[0_0_20px_rgba(180,250,50,0.05)]"
+                  className="hidden xl:block px-6 py-3 border border-neon/30 text-[10px] text-neon uppercase tracking-[0.4em] hover:bg-neon hover:text-basalt transition-all duration-500 font-black shadow-[0_0_20px_rgba(2,80,67,0.05)]"
                 >
                   Re-calibrate DNA Map
                 </button>
@@ -517,9 +507,9 @@ Return ONLY the rows.`;
         </div>
 
         {/* Onboarding / Dashboard Guide */}
-        <div className="max-w-4xl mx-auto mb-12 p-6 bg-neon/5 border border-neon/10 rounded-none text-center">
+        <div className="max-w-4xl mx-auto mb-12 p-6 glass rounded-none text-center">
           <p className="text-[10px] md:text-xs text-neon uppercase tracking-[0.3em] font-black leading-loose">
-            Click any item to see your options: <span className="text-white bg-neon/20 px-2">Open Link</span> to buy, or <span className="text-white bg-neon/20 px-2">Curate an outfit</span> to see it styled.
+            Click any item to see your options: <span className="text-white glass px-2">Open Link</span> to buy, or <span className="text-white glass px-2">Curate an outfit</span> to see it styled.
           </p>
         </div>
 
@@ -560,7 +550,7 @@ Return ONLY the rows.`;
             <div className="flex justify-center mb-6">
               <button 
                 onClick={() => setShowFilters(!showFilters)}
-                className="px-8 py-3 border border-neon/30 text-[10px] text-neon uppercase tracking-[0.4em] font-black flex items-center gap-3 bg-neon/5 hover:bg-neon/10 transition-all"
+                className="px-8 py-3 glass text-[10px] text-neon uppercase tracking-[0.4em] font-black flex items-center gap-3 hover:bg-neon/10 transition-all border-neon/30"
               >
                 <LayoutGrid className="w-4 h-4" />
                 {showFilters ? "Collapse Filters" : "Expand Categories & Filters"}
@@ -579,7 +569,7 @@ Return ONLY the rows.`;
                     className={cn(
                       "px-4 md:px-8 py-2 md:py-3 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] border transition-all duration-500",
                       selectedCategory === cat 
-                        ? "bg-neon text-basalt border-neon shadow-[0_0_20px_rgba(180,250,50,0.2)]" 
+                        ? "bg-neon text-basalt border-neon shadow-[0_0_20px_rgba(2,80,67,0.2)]" 
                         : "text-neon/40 border-neon/10 hover:border-neon/40 text-[8px]"
                     )}
                   >
@@ -697,7 +687,7 @@ Return ONLY the rows.`;
                     <div className="flex flex-col sm:flex-row justify-center gap-10 mt-20">
                       <button 
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleMatchAndBatch(batchedOutfit.base); }}
-                        className="px-16 py-8 border-2 border-neon text-neon text-xs font-black uppercase tracking-[0.6em] hover:bg-neon hover:text-basalt transition-all duration-700 shadow-[0_0_40px_rgba(180,250,50,0.1)] flex items-center gap-4"
+                        className="px-16 py-8 border-2 border-neon text-neon text-xs font-black uppercase tracking-[0.6em] hover:bg-neon hover:text-basalt transition-all duration-700 shadow-[0_0_40px_rgba(2,80,67,0.1)] flex items-center gap-4"
                         disabled={isBatching}
                       >
                         <RefreshCcw className={cn("w-5 h-5", isBatching && "animate-spin")} />
@@ -747,7 +737,7 @@ Return ONLY the rows.`;
                       duration: 3, 
                       ease: "linear" 
                     }}
-                    className="absolute left-0 right-0 h-[2px] bg-neon shadow-[0_0_20px_rgba(180,250,50,0.8)] z-10 will-change-[top]"
+                    className="absolute left-0 right-0 h-[2px] bg-neon shadow-[0_0_20px_rgba(2,80,67,0.8)] z-10 will-change-[top]"
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Scan className="w-12 h-12 text-neon/40" />
@@ -770,7 +760,7 @@ Return ONLY the rows.`;
                 exit={{ opacity: 0 }}
                 className="py-40 flex flex-col items-center justify-center text-center border-4 border-dashed border-neon/5 bg-neon/[0.02]"
               >
-                <div className="w-32 h-32 bg-neon/10 flex items-center justify-center mb-10 border border-neon/30 shadow-[0_0_60px_rgba(180,250,50,0.1)]">
+                <div className="w-32 h-32 bg-neon/10 flex items-center justify-center mb-10 border border-neon/30 shadow-[0_0_60px_rgba(2,80,67,0.1)]">
                   <Camera className="text-neon w-12 h-12" />
                 </div>
                 <h3 className="text-5xl font-serif font-black text-neon mb-6 uppercase tracking-tighter">Vision Engine</h3>
@@ -794,7 +784,7 @@ Return ONLY the rows.`;
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mb-12 p-8 bg-basalt/20 border border-[#D3D3D3]/30 rounded-none shadow-[0_0_10px_rgba(211,211,211,0.1)] flex flex-col md:flex-row items-center gap-8"
+                    className="mb-12 p-8 glass-card rounded-none shadow-[0_0_10px_rgba(211,211,211,0.1)] flex flex-col md:flex-row items-center gap-8"
                   >
                     <div className="flex-1 space-y-2">
                       <h4 className="text-2xl md:text-4xl font-serif font-black text-white uppercase tracking-tighter leading-none">{identity.name}</h4>
@@ -891,7 +881,7 @@ Return ONLY the rows.`;
                           whileHover={{ scale: 1.02 }}
                           className="group flex flex-col cursor-pointer gpu-accelerated"
                         >
-                          <div className="w-full aspect-[3/4] flex-shrink-0 relative overflow-hidden mb-8 border border-taupe group-hover:border-neon shadow-[0_0_10px_rgba(211,211,211,0.2)] transition-all duration-700 rounded-none hover:shadow-[0_0_50px_rgba(180,250,50,0.15)]">
+                          <div className="w-full aspect-[3/4] flex-shrink-0 relative overflow-hidden mb-8 border border-taupe group-hover:border-neon shadow-[0_0_10px_rgba(211,211,211,0.2)] transition-all duration-700 rounded-none hover:shadow-[0_0_50px_rgba(2,80,67,0.15)]">
                             <motion.img 
                               whileHover={{ scale: 1.08 }}
                               src={item.image_url} 
@@ -904,18 +894,18 @@ Return ONLY the rows.`;
                             </div>
                             
                             {/* Hover Controls Overlay */}
-                            <div className="absolute inset-0 bg-basalt/60 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center gap-4 backdrop-blur-sm rounded-none px-6">
+                            <div className="absolute inset-0 glass-neon opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center gap-4 rounded-none px-6">
                               <a 
                                 href={item.product_link} 
                                 target="_blank" 
                                 onClick={() => trackInteraction(item.id, 'link_click')}
-                                className="w-full py-4 bg-neon text-basalt rounded-none flex items-center justify-center gap-2 hover:bg-white transition-all shadow-2xl text-[10px] font-black uppercase tracking-[0.3em]"
+                                className="w-full py-4 glass text-neon rounded-none flex items-center justify-center gap-2 hover:bg-white transition-all shadow-2xl text-[10px] font-black uppercase tracking-[0.3em]"
                               >
                                 Open Link
                               </a>
                               <button 
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); trackInteraction(item.id, 'batch_click'); handleMatchAndBatch(item); }}
-                                className="w-full py-4 bg-white text-basalt rounded-none flex items-center justify-center gap-2 hover:bg-neon transition-all shadow-2xl text-[10px] font-black uppercase tracking-[0.3em]"
+                                className="w-full py-4 glass text-white rounded-none flex items-center justify-center gap-2 hover:bg-neon transition-all shadow-2xl text-[10px] font-black uppercase tracking-[0.3em]"
                               >
                                 Curate an outfit
                               </button>
@@ -954,7 +944,7 @@ Return ONLY the rows.`;
       {/* Floating Action / Scanners - Fixed Positioned relative to screen */}
       {activeTab === "recommendations" && (
         <div className="fixed bottom-12 right-12 z-[100]">
-          <label className="w-24 h-24 bg-neon shadow-[0_0_50px_rgba(180,250,50,0.4)] flex items-center justify-center cursor-pointer hover:scale-110 transition-all duration-500 active:scale-95 group relative">
+          <label className="w-24 h-24 bg-neon shadow-[0_0_50px_rgba(2,80,67,0.4)] flex items-center justify-center cursor-pointer hover:scale-110 transition-all duration-500 active:scale-95 group relative">
             <div className="absolute inset-0 border-2 border-neon animate-ping opacity-20" />
             <Scan className="text-basalt w-10 h-10" />
             <div className="absolute -top-12 right-0 bg-basalt border border-neon/30 px-4 py-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">

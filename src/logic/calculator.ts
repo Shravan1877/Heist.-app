@@ -148,8 +148,44 @@ export function calculateVector(answers: number[]): StyleVector {
   return result.map(v => Number((v / sum).toFixed(4))) as StyleVector;
 }
 
-export function getAestheticIdentity(vector: StyleVector) {
-  const [om, iv, sb, sw] = vector;
+export function safeParseVector(v: any): StyleVector {
+  if (Array.isArray(v)) {
+    if (v.length === 4) {
+      return v.map(Number) as StyleVector;
+    }
+  }
+  if (typeof v === 'string') {
+    let str = v.trim();
+    // Strip direct enclosing quotes if double stringified from database or Rest
+    if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+      str = str.slice(1, -1).trim();
+    }
+    
+    try {
+      const parsed = JSON.parse(str);
+      if (Array.isArray(parsed) && parsed.length === 4) {
+        return parsed.map(Number) as StyleVector;
+      }
+    } catch (e) {
+      // skip and fall back to manual regex cleaning
+    }
+    
+    const cleanNumbers = str
+      .replace(/[()\[\]{}]/g, '')
+      .split(/[\s,;]+/)
+      .map(Number)
+      .filter(n => !isNaN(n));
+      
+    if (cleanNumbers.length === 4) {
+      return cleanNumbers as StyleVector;
+    }
+  }
+  return [0.25, 0.25, 0.25, 0.25];
+}
+
+export function getAestheticIdentity(vector: any) {
+  const parsed = safeParseVector(vector);
+  const [om, iv, sb, sw] = parsed;
   
   const identities = [
     { name: "Urban Romantic", primary: "Soft Boy", p: sb, secondary: "Ivy", s: iv },

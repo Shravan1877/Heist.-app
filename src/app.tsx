@@ -6,21 +6,42 @@
 import React, { useState, useEffect } from "react";
 import Diagnostic from "./components/Diagnostic";
 import Vault from "./components/Vault";
+import Legal from "./components/Legal";
 import { motion, AnimatePresence } from "motion/react";
 import { Sparkles, ShieldCheck, LogIn, UserCircle, Archive, Scan, LayoutGrid, Camera, Sun, Moon } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import { cn } from "./lib/utils";
 import { Session } from "@supabase/supabase-js";
+import { safeParseVector } from "./logic/calculator";
 
 import LushGradientBackground from "./components/LushGradientBackground";
 
 export default function App() {
-  const [view, setView] = useState<"home" | "diagnostic" | "vault" | "auth_required">("home");
+  const [view, setView] = useState<"home" | "diagnostic" | "vault" | "auth_required" | "quiz_intro_1" | "quiz_intro_2" | "legal">(() => {
+    if (typeof window !== "undefined" && window.location.pathname === "/legal") {
+      return "legal";
+    }
+    return "home";
+  });
+  const [legalSection, setLegalSection] = useState<"refund" | "privacy" | "terms">("refund");
   const [vaultTab, setVaultTab] = useState<"recommendations" | "vision">("recommendations");
   const [userVector, setUserVector] = useState<[number, number, number, number] | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path === "/legal") {
+        setView("legal");
+      } else if (path === "/") {
+        setView("home");
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   useEffect(() => {
     // Theme initialization
@@ -52,14 +73,7 @@ export default function App() {
           .single();
         
         if (profile?.style_dna) {
-          try {
-            const vector = typeof profile.style_dna === 'string' 
-              ? JSON.parse(profile.style_dna) 
-              : profile.style_dna;
-            setUserVector(vector);
-          } catch (e) {
-            console.error("Failed to parse saved style DNA");
-          }
+          setUserVector(safeParseVector(profile.style_dna));
         }
       }
       setLoading(false);
@@ -74,7 +88,7 @@ export default function App() {
     return () => subscription?.unsubscribe();
   }, []);
 
-  const startDiagnostic = () => setView("diagnostic");
+  const startDiagnostic = () => setView("quiz_intro_1");
 
   const handleDiagnosticComplete = async (vector: [number, number, number, number]) => {
     setUserVector(vector);
@@ -169,8 +183,7 @@ export default function App() {
           // Fetch DNA vector
           const { data: profile } = await supabase.from("profiles").select("style_dna").eq("id", data.session.user.id).single();
           if (profile?.style_dna) {
-            const vector = typeof profile.style_dna === "string" ? JSON.parse(profile.style_dna) : profile.style_dna;
-            setUserVector(vector);
+            setUserVector(safeParseVector(profile.style_dna));
           }
           setView("vault");
         }
@@ -209,10 +222,7 @@ export default function App() {
           .single();
         
         if (profile?.style_dna) {
-          const vector = typeof profile.style_dna === 'string' 
-            ? JSON.parse(profile.style_dna) 
-            : profile.style_dna;
-          setUserVector(vector);
+          setUserVector(safeParseVector(profile.style_dna));
           setView("vault");
         } else {
           setView("diagnostic");
@@ -236,7 +246,7 @@ export default function App() {
       <div className="fixed top-6 right-6 md:top-10 md:right-10 z-[1000]">
         <button 
           onClick={toggleTheme}
-          className="p-4 bg-basalt/20 backdrop-blur-xl border border-neon/20 hover:border-neon hover:scale-110 transition-all rounded-full text-obsidian"
+          className="p-4 glass hover:border-neon hover:scale-110 transition-all rounded-full text-obsidian"
           title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
         >
           {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -278,6 +288,71 @@ export default function App() {
                       HEIST.
                     </motion.h1>
                   </div>
+
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 1, duration: 1, ease: [0.4, 0, 0.2, 1] }}
+                    className="flex flex-col items-center gap-12 mb-20 w-full max-w-2xl px-6 relative z-10"
+                  >
+                    <div className="space-y-4">
+                       <p className="text-neon text-[10px] md:text-sm font-black uppercase tracking-[0.6em] px-4 animate-pulse">
+                         INITIALISE THE DNA SCAN TO ASCEND YOUR FASHION SENSE
+                       </p>
+                    </div>
+
+                    {!session ? (
+                      <div className="flex flex-col sm:flex-row gap-4 md:gap-6 w-full">
+                        <motion.button
+                          whileHover={{ scale: 1.05, backgroundColor: "var(--color-bg)", color: "var(--color-accent)" }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={startDiagnostic}
+                          id="begin-diagnostic"
+                          className="flex-1 glass-neon text-basalt py-10 flex items-center justify-center gap-4 group transition-all duration-700 relative overflow-hidden shadow-[0_0_80px_rgba(2,80,67,0.3)] border-2 border-neon pulse-glow"
+                        >
+                          <Sparkles className="w-6 h-6" />
+                          <span className="text-sm tracking-[0.5em] font-black uppercase">Start Style DNA Quiz</span>
+                        </motion.button>
+
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={handleLogin}
+                          className="flex-1 glass text-neon py-10 flex items-center justify-center gap-4 group hover:bg-neon/10 transition-all duration-300 border-2 border-neon/40 backdrop-blur-md"
+                        >
+                          <LogIn className="w-6 h-6" />
+                          <span className="text-sm tracking-[0.5em] font-black uppercase">Sign In</span>
+                        </motion.button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-6 w-full">
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleSavedSignIn("vision")}
+                          className="w-full glass-neon text-basalt py-10 flex items-center justify-center gap-4 group transition-all duration-300 shadow-[0_0_80px_rgba(2,80,67,0.5)] border-2 border-neon"
+                        >
+                          <Camera className="w-7 h-7" />
+                          <span className="text-sm tracking-[0.6em] font-black uppercase">Open Vision Engine</span>
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleSavedSignIn("recommendations")}
+                          className="w-full glass text-neon/60 py-6 flex items-center justify-center gap-4 border border-neon/20 hover:border-neon hover:text-neon transition-all"
+                        >
+                          <Archive className="w-5 h-5" />
+                          <span className="text-xs tracking-[0.4em] font-black uppercase">Archive Storage</span>
+                        </motion.button>
+                        <button
+                         onClick={handleSignOut}
+                         className="w-full py-4 text-neon/40 font-black text-[9px] uppercase tracking-[0.4em] hover:text-red-500 transition-colors"
+                       >
+                         De-authorize Neural Node [{session.user.email?.split('@')[0]}]
+                       </button>
+                      </div>
+                    )}
+                  </motion.div>
                   
                   <motion.div 
                     initial="initial"
@@ -285,8 +360,8 @@ export default function App() {
                     variants={{
                       animate: {
                         transition: {
-                          staggerChildren: 0.5,
-                          delayChildren: 1.2
+                          staggerChildren: 0.3,
+                          delayChildren: 2
                         }
                       }
                     }}
@@ -297,13 +372,13 @@ export default function App() {
                         initial: { opacity: 0, y: 20 },
                         animate: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.4, 0, 0.2, 1] } }
                       }}
-                      className="space-y-6"
+                      className="glass-card p-8 md:p-12 space-y-6"
                     >
                       <h2 className="text-obsidian text-xl md:text-2xl font-serif font-black uppercase tracking-tight text-stroke-sm">
                         The Mission
                       </h2>
                       <p className="text-obsidian/80 text-lg md:text-xl font-medium leading-relaxed tracking-tight text-stroke-sm">
-                        HEIST. It's not just another shop; it’s a platform for the best homegrown fashion brands, many hidden gems stay hidden, and it's time to change it. We don't dump thousands of items on you. We curate your specific vibe.
+                        HEIST. It's not just another shop; it’s a platform for the best homegrown fashion brands. Many gems stay hidden, and it's time to change that. We curate your specific vibe.
                       </p>
                     </motion.div>
 
@@ -312,9 +387,8 @@ export default function App() {
                         initial: { opacity: 0, y: 20 },
                         animate: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.4, 0, 0.2, 1] } }
                       }}
-                      className="space-y-6"
+                      className="glass-card p-8 md:p-12 space-y-6"
                     >
-                      <div className="h-[1px] w-full bg-neon/10" />
                       <h2 className="text-obsidian text-xl md:text-2xl font-serif font-black uppercase tracking-tight text-stroke-sm">
                         The Technology
                       </h2>
@@ -322,79 +396,69 @@ export default function App() {
                         Using a state-of-the-art Style DNA Quiz, our AI maps your exact aesthetic preferences to create a personalized digital wardrobe. No noise, just your style.
                       </p>
                     </motion.div>
-
-                    <motion.div 
-                      variants={{
-                        initial: { opacity: 0, y: 20 },
-                        animate: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.4, 0, 0.2, 1] } }
-                      }}
-                      className="space-y-6"
-                    >
-                      <div className="h-[1px] w-full bg-neon/10" />
-                      <p className="text-limestone text-xs uppercase tracking-[0.3em] leading-loose">
-                        Take the 2-minute Style DNA Quiz to unlock your curated vault.
-                      </p>
-                    </motion.div>
                   </motion.div>
                 </div>
+              </motion.div>
+            )}
 
+            {view === "quiz_intro_1" && (
+              <motion.div
+                key="quiz_intro_1"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="px-8 py-24 flex flex-col h-full bg-basalt items-center justify-center text-center min-h-[calc(100vh-160px)]"
+              >
                 <motion.div 
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 2.8, duration: 1, ease: [0.4, 0, 0.2, 1] }}
-                  className="mt-12 md:mt-24 flex flex-col sm:flex-row gap-4 md:gap-6 w-full max-w-2xl px-6 relative z-10"
+                  className="max-w-3xl space-y-12"
                 >
-                  {!session ? (
-                    <>
-                      <motion.button
-                        whileHover={{ scale: 1.02, backgroundColor: "var(--color-bg)", color: "var(--color-accent)" }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={startDiagnostic}
-                        id="begin-diagnostic"
-                        className="flex-1 bg-neon text-basalt py-8 flex items-center justify-center gap-4 group transition-all duration-700 relative overflow-hidden shadow-[0_0_50px_rgba(180,250,50,0.1)] border border-neon pulse-glow"
-                      >
-                        <Sparkles className="w-5 h-5" />
-                        <span className="text-xs tracking-[0.4em] font-black uppercase">Start Style DNA Quiz</span>
-                      </motion.button>
+                  <p className="text-neon text-[10px] md:text-xs uppercase tracking-[0.6em] font-black opacity-50">Protocol: DNA Mapping</p>
+                  <h2 className="text-4xl sm:text-6xl font-serif font-black text-neon uppercase tracking-tighter leading-tight">
+                    This quiz analyses your style DNA so you know what clothes you can buy
+                  </h2>
+                  <div className="pt-12">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setView("quiz_intro_2")}
+                      className="px-16 py-8 bg-neon text-basalt text-xs font-black uppercase tracking-[0.5em] shadow-[0_0_50px_rgba(2,80,67,0.4)]"
+                    >
+                      Process Integration
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
 
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleLogin}
-                        className="flex-1 bg-transparent text-neon py-8 flex items-center justify-center gap-4 group hover:bg-neon/10 transition-all duration-300 border border-neon/20"
-                      >
-                        <LogIn className="w-5 h-5" />
-                        <span className="text-xs tracking-[0.4em] font-black uppercase">Sign In</span>
-                      </motion.button>
-                    </>
-                   ) : (
-                     <div className="flex flex-col gap-6 w-full">
-                       <motion.button
-                         whileHover={{ scale: 1.02 }}
-                         whileTap={{ scale: 0.98 }}
-                         onClick={() => handleSavedSignIn("vision")}
-                         className="w-full bg-neon text-basalt py-8 flex items-center justify-center gap-4 group transition-all duration-300 shadow-[0_0_60px_rgba(180,250,50,0.4)]"
-                       >
-                         <Camera className="w-6 h-6" />
-                         <span className="text-xs tracking-[0.5em] font-black uppercase">Open Vision Engine</span>
-                       </motion.button>
-                       <motion.button
-                         whileHover={{ scale: 1.02 }}
-                         whileTap={{ scale: 0.98 }}
-                         onClick={() => handleSavedSignIn("recommendations")}
-                         className="w-full bg-transparent text-neon/60 py-6 flex items-center justify-center gap-4 border border-neon/20 hover:border-neon hover:text-neon transition-all"
-                       >
-                         <Archive className="w-5 h-5" />
-                         <span className="text-xs tracking-[0.4em] font-black uppercase">Archive Storage</span>
-                       </motion.button>
-                       <button
-                         onClick={handleSignOut}
-                         className="w-full py-4 text-limestone/40 font-black text-[9px] uppercase tracking-[0.4em] hover:text-red-500 transition-colors"
-                       >
-                         De-authorize Neural Node [{session.user.email?.split('@')[0]}]
-                       </button>
-                     </div>
-                   )}
+            {view === "quiz_intro_2" && (
+              <motion.div
+                key="quiz_intro_2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="px-8 py-24 flex flex-col h-full bg-basalt items-center justify-center text-center min-h-[calc(100vh-160px)]"
+              >
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="max-w-3xl space-y-12"
+                >
+                  <p className="text-neon text-[10px] md:text-xs uppercase tracking-[0.6em] font-black opacity-50">Final Authorization</p>
+                  <h2 className="text-4xl sm:text-6xl font-serif font-black text-neon uppercase tracking-tighter leading-tight">
+                    Let's begin your journey to the other side
+                  </h2>
+                  <div className="pt-12">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setView("diagnostic")}
+                      className="px-16 py-8 bg-neon text-basalt text-xs font-black uppercase tracking-[0.5em] shadow-[0_0_50px_rgba(2,80,67,0.4)]"
+                    >
+                      Enter The Void
+                    </motion.button>
+                  </div>
                 </motion.div>
               </motion.div>
             )}
@@ -420,7 +484,7 @@ export default function App() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="px-8 py-24 flex flex-col h-full bg-basalt items-center justify-center text-center min-h-[calc(100vh-160px)]"
               >
-                <div className="mb-12 p-8 bg-neon/10 border border-neon/30 shadow-[0_0_40px_rgba(180,250,50,0.1)]">
+                <div className="mb-12 p-8 glass-neon shadow-[0_0_40px_rgba(2,80,67,0.1)]">
                   <ShieldCheck className="w-12 h-12 text-neon" />
                 </div>
                 <h2 className="text-4xl sm:text-5xl font-serif font-black text-obsidian mb-4 uppercase tracking-tighter">
@@ -442,7 +506,7 @@ export default function App() {
                         required
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        className="w-full bg-neon/5 border border-neon/10 p-6 text-xs font-mono text-neon placeholder:text-neon/20 focus:border-neon outline-none transition-all uppercase tracking-widest"
+                        className="w-full glass p-6 text-xs font-mono text-neon placeholder:text-neon/20 focus:border-neon outline-none transition-all uppercase tracking-widest"
                       />
                     </div>
                   )}
@@ -453,17 +517,17 @@ export default function App() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-neon/5 border border-neon/10 p-6 text-xs font-mono text-neon placeholder:text-neon/20 focus:border-neon outline-none transition-all uppercase tracking-widest"
+                      className="w-full glass p-6 text-xs font-mono text-neon placeholder:text-neon/20 focus:border-neon outline-none transition-all uppercase tracking-widest"
                     />
                   </div>
                   <div className="space-y-1">
                     <input 
                       type="password" 
-                      placeholder="PASSWORD"
+                      placeholder="SET A PASSWORD"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-neon/5 border border-neon/10 p-6 text-xs font-mono text-neon placeholder:text-neon/20 focus:border-neon outline-none transition-all uppercase tracking-widest"
+                      className="w-full glass p-6 text-xs font-mono text-neon placeholder:text-neon/20 focus:border-neon outline-none transition-all uppercase tracking-widest"
                     />
                   </div>
                   {authError && (
@@ -476,7 +540,7 @@ export default function App() {
                   
                   <button
                     type="submit"
-                    className="w-full bg-neon text-basalt py-6 flex items-center justify-center gap-4 group hover:bg-white transition-all duration-300 shadow-[0_0_30px_rgba(180,250,50,0.2)]"
+                    className="w-full bg-neon text-basalt py-6 flex items-center justify-center gap-4 group hover:bg-white transition-all duration-300 shadow-[0_0_30px_rgba(2,80,67,0.2)]"
                     disabled={loading}
                   >
                     {loading ? (
@@ -517,41 +581,98 @@ export default function App() {
                 />
               </motion.div>
             )}
+
+            {view === "legal" && (
+              <motion.div
+                key="legal"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="h-full"
+              >
+                <Legal 
+                  initialSection={legalSection}
+                  onBack={() => {
+                    setView("home");
+                    window.history.pushState(null, "", "/");
+                  }}
+                />
+              </motion.div>
+            )}
           </AnimatePresence>
         </main>
         
-        <nav className="fixed bottom-4 md:bottom-8 left-0 right-0 md:left-1/2 md:-translate-x-1/2 z-[100] flex items-center justify-center pointer-events-none">
-          <div className="flex items-center gap-2 md:gap-4 p-2 md:p-3 bg-basalt/60 backdrop-blur-2xl border border-limestone/40 shadow-[0_0_40px_rgba(0,0,0,0.5)] pointer-events-auto mx-4">
-            <button 
-              onClick={() => setView("vault")}
-              className={cn(
-                "flex-1 md:px-12 py-4 px-6 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
-                view === "vault" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
-              )}
-            >
-              <Archive className="w-5 h-5" />
-              <span className="text-[8px] md:text-[10px] font-black tracking-widest uppercase">Archive</span>
-            </button>
-            
-            <button 
-              onClick={() => setView("home")}
-              className={cn(
-                "flex-1 md:px-12 py-4 px-6 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
-                view === "home" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
-              )}
-            >
-              <ShieldCheck className="w-5 h-5" />
-              <span className="text-[8px] md:text-[10px] font-black tracking-widest uppercase">Protocol</span>
-            </button>
-          </div>
-        </nav>
+        {view !== "legal" && (
+          <nav className="fixed bottom-4 md:bottom-8 left-0 right-0 md:left-1/2 md:-translate-x-1/2 z-[100] flex items-center justify-center pointer-events-none">
+            <div className="flex items-center gap-2 md:gap-4 p-2 md:p-3 glass pointer-events-auto mx-4 border-neon/10">
+              <button 
+                onClick={() => setView("vault")}
+                className={cn(
+                  "flex-1 md:px-12 py-4 px-6 border border-white/5 flex flex-col items-center gap-1 transition-all",
+                  view === "vault" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
+                )}
+              >
+                <Archive className="w-5 h-5" />
+                <span className="text-[8px] md:text-[10px] font-black tracking-widest uppercase">Archive</span>
+              </button>
+              
+              <button 
+                onClick={() => setView("home")}
+                className={cn(
+                  "flex-1 md:px-12 py-4 px-6 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
+                  view === "home" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
+                )}
+              >
+                <ShieldCheck className="w-5 h-5" />
+                <span className="text-[8px] md:text-[10px] font-black tracking-widest uppercase">Protocol</span>
+              </button>
+            </div>
+          </nav>
+        )}
 
         {/* Footnote */}
-        <footer className="py-24 flex flex-col items-center border-t border-neon/10 bg-basalt">
-          <p className="text-[10px] uppercase font-black tracking-[0.6em] text-neon/20">
-            HEIST. GLOBAL NETWORK v1.0.4
-          </p>
-        </footer>
+        {view !== "legal" && (
+          <footer className="py-24 flex flex-col items-center border-t border-neon/10 bg-basalt gap-8">
+            <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 px-6">
+              <button 
+                onClick={() => {
+                  setLegalSection("refund");
+                  setView("legal");
+                  window.history.pushState(null, "", "/legal");
+                }}
+                className="text-[9px] uppercase font-black tracking-[0.3em] text-[#e0e0e0]/40 hover:text-neon transition-colors cursor-pointer"
+              >
+                Refund Policy
+              </button>
+              <span className="text-[#e0e0e0]/10 text-xs hidden sm:inline">|</span>
+              <button 
+                onClick={() => {
+                  setLegalSection("privacy");
+                  setView("legal");
+                  window.history.pushState(null, "", "/legal");
+                }}
+                className="text-[9px] uppercase font-black tracking-[0.3em] text-[#e0e0e0]/40 hover:text-neon transition-colors cursor-pointer"
+              >
+                Privacy Policy
+              </button>
+              <span className="text-[#e0e0e0]/10 text-xs hidden sm:inline">|</span>
+              <button 
+                onClick={() => {
+                  setLegalSection("terms");
+                  setView("legal");
+                  window.history.pushState(null, "", "/legal");
+                }}
+                className="text-[9px] uppercase font-black tracking-[0.3em] text-[#e0e0e0]/40 hover:text-neon transition-colors cursor-pointer"
+              >
+                Terms of Service
+              </button>
+            </div>
+            
+            <p className="text-[10px] uppercase font-black tracking-[0.6em] text-neon/20">
+              HEIST. GLOBAL NETWORK v1.0.4
+            </p>
+          </footer>
+        )}
       </div>
     </div>
   );
