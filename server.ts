@@ -126,13 +126,18 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT ? Number(process.env.PORT) : (process.env.NODE_ENV === "production" ? 8080 : 3000);
 
 app.use(express.json({ limit: '10mb' }));
 
 // Health Check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'active', platform: 'HEIST_CORE' });
+});
+
+// Dedicated Health Check for DigitalOcean App Platform Readiness/Liveness Probes
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
 // API for Vercel Cron
@@ -256,15 +261,12 @@ async function setupServer() {
   }
 }
 
-const portNumber = Number(PORT);
-
 // Global initialization
 setupServer().then(() => {
-  if (process.env.NODE_ENV !== "production") {
-    app.listen(portNumber, "0.0.0.0", () => {
-      console.log(`HEIST. Server running on http://localhost:${portNumber}`);
-    });
-  }
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`[DEPLOY] HEIST Server successfully bound to interface 0.0.0.0 on port ${PORT}`);
+    console.log(`[DEPLOY] Ready to receive external request routing (DigitalOcean probes active).`);
+  });
 });
 
 export default app;
