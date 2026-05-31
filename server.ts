@@ -115,15 +115,17 @@ async function performReset() {
   }
 }
 
-// Keep the interval for non-serverless environments
-if (process.env.NODE_ENV !== "production") {
-  setInterval(async () => {
-    const now = new Date();
-    if (now.getUTCHours() === 18 && now.getUTCMinutes() === 29) {
-      await performReset();
-    }
-  }, 60000);
-}
+// Keep the interval active in all environments for self-hosted or persistent container runtimes (e.g. Cloud Run, DigitalOcean)
+setInterval(async () => {
+  const now = new Date();
+  // Trigger at 12:01 AM (Hour 0, Minute 1) in either local server time or UTC time
+  const isLocal1201 = now.getHours() === 0 && now.getMinutes() === 1;
+  const isUTC1201 = now.getUTCHours() === 0 && now.getUTCMinutes() === 1;
+  
+  if (isLocal1201 || isUTC1201) {
+    await performReset();
+  }
+}, 60000);
 
 const app = express();
 const PORT = process.env.PORT ? Number(process.env.PORT) : (process.env.NODE_ENV === "production" ? 8080 : 3000);
