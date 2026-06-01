@@ -29,6 +29,7 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [comingSoonAlert, setComingSoonAlert] = useState<string | null>(null);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -633,6 +634,33 @@ export default function App() {
         {/* Footnote */}
         {view !== "legal" && (
           <footer className="py-24 flex flex-col items-center border-t border-neon/10 bg-basalt gap-8">
+            {/* Coming Soon Section */}
+            <div className="w-full max-w-3xl px-6 flex flex-col items-center gap-4 mb-6">
+              <span className="text-[10px] uppercase font-black tracking-[0.6em] text-neon animate-pulse">
+                coming soon
+              </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                <button
+                  type="button"
+                  onClick={() => setComingSoonAlert("Tokyo-your everyday stylist ai and hype bro")}
+                  className="flex flex-col justify-center items-center text-center p-8 bg-neon border border-neon/40 hover:brightness-110 hover:shadow-[0_0_25px_rgba(2,80,67,0.4)] transition-all cursor-pointer min-h-[120px]"
+                >
+                  <span className="text-xs font-mono text-white leading-relaxed tracking-wider font-bold">
+                    Tokyo-your everyday stylist ai and hype bro
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setComingSoonAlert("The Fashion Thesis - Understand your fashion style and vibe deeply")}
+                  className="flex flex-col justify-center items-center text-center p-8 bg-neon border border-neon/40 hover:brightness-110 hover:shadow-[0_0_25px_rgba(2,80,67,0.4)] transition-all cursor-pointer min-h-[120px]"
+                >
+                  <span className="text-xs font-mono text-white leading-relaxed tracking-wider font-bold">
+                    The Fashion Thesis - Understand your fashion style and vibe deeply
+                  </span>
+                </button>
+              </div>
+            </div>
+
             <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 px-6">
               <button 
                 onClick={() => {
@@ -674,6 +702,33 @@ export default function App() {
           </footer>
         )}
       </div>
+
+      {comingSoonAlert && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-basalt/80 backdrop-blur-md">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md glass-neon p-8 text-center space-y-6 shadow-[0_0_50px_rgba(2,80,67,0.3)] border border-neon/40"
+          >
+            <div className="text-neon uppercase tracking-[0.6em] text-[10px] font-black animate-pulse">
+              SYSTEM TRANSMISSION
+            </div>
+            <h3 className="text-obsidian text-3xl font-serif font-black uppercase tracking-tight text-stroke-sm">
+              coming soon
+            </h3>
+            <p className="text-limestone text-xs font-mono uppercase tracking-widest leading-relaxed">
+              "{comingSoonAlert}"
+              <span className="block mt-4 text-[10px] text-neon/60 font-mono">NODE CURRENTLY OFFLINE</span>
+            </p>
+            <button 
+              onClick={() => setComingSoonAlert(null)}
+              className="w-full py-4 bg-neon text-basalt text-xs font-black uppercase tracking-[0.4em] hover:bg-white hover:text-basalt transition-all cursor-pointer"
+            >
+              Acknowledge
+            </button>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
