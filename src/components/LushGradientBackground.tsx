@@ -1,91 +1,159 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 
-const LushGradientBackground: React.FC = () => {
+interface LushGradientBackgroundProps {
+  theme?: "dark" | "light";
+}
+
+const LushGradientBackground: React.FC<LushGradientBackgroundProps> = ({ theme = 'dark' }) => {
+  const isDark = theme === 'dark';
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
+
+    let animationId: number;
+    let lastTime = 0;
+    const interval = 80; // Crisp film-grain refresh interval (12.5 fps of analog flicker)
+
+    const patternSize = 400; // Perfect 400px pattern size
+    const numFrames = 6;     // Pre-generate 6 unique organic noise frames for outstanding richness
+
+    const resize = () => {
+      if (!canvas) return;
+      // Device pixel ratio awareness for absolute resolution clarity
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      ctx.scale(dpr, dpr);
+    };
+
+    // exact color palette specs
+    const darkColorBg = { r: 28, g: 30, b: 29 };     // #1c1e1d
+    const darkColorGrain1 = { r: 24, g: 26, b: 25 }; // #181a19
+    const darkColorGrain2 = { r: 31, g: 33, b: 32 }; // #1f2120
+    const darkColorAccent = { r: 44, g: 107, b: 100 }; // #2c6b64
+
+    const lightColorBg = { r: 245, g: 245, b: 245 };  // #f5f5f5
+    const lightColorGrain1 = { r: 234, g: 234, b: 234 }; // #eaeaea
+    const lightColorGrain2 = { r: 220, g: 218, b: 213 }; // #dcdad5
+    const lightColorAccent = { r: 44, g: 107, b: 100 }; // #2c6b64
+
+    const bg = isDark ? darkColorBg : lightColorBg;
+    const g1 = isDark ? darkColorGrain1 : lightColorGrain1;
+    const g2 = isDark ? darkColorGrain2 : lightColorGrain2;
+    const acc = isDark ? darkColorAccent : lightColorAccent;
+    const accOpacity = isDark ? 0.22 : 0.08;
+
+    // Fast generation using ImageData logic
+    const frameCanvases = Array.from({ length: numFrames }, () => {
+      const offscreen = document.createElement('canvas');
+      offscreen.width = patternSize;
+      offscreen.height = patternSize;
+      const oCtx = offscreen.getContext('2d');
+      if (!oCtx) return offscreen;
+
+      const imgData = oCtx.createImageData(patternSize, patternSize);
+      const data = imgData.data;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const rand = Math.random();
+        let r = bg.r;
+        let g = bg.g;
+        let b = bg.b;
+
+        if (rand < 0.18) {
+          r = g1.r;
+          g = g1.g;
+          b = g1.b;
+        } else if (rand < 0.35) {
+          r = g2.r;
+          g = g2.g;
+          b = g2.b;
+        } else if (rand < 0.39) {
+          // Microscopic structural teal highlights
+          r = Math.round(bg.r * (1 - accOpacity) + acc.r * accOpacity);
+          g = Math.round(bg.g * (1 - accOpacity) + acc.g * accOpacity);
+          b = Math.round(bg.b * (1 - accOpacity) + acc.b * accOpacity);
+        }
+
+        data[i] = r;
+        data[i + 1] = g;
+        data[i + 2] = b;
+        data[i + 3] = 255; // Solid opaque base for optimized composite operations
+      }
+
+      oCtx.putImageData(imgData, 0, 0);
+      return offscreen;
+    });
+
+    let currentFrameIdx = 0;
+
+    const render = (time: number) => {
+      if (time - lastTime > interval) {
+        currentFrameIdx = (currentFrameIdx + 1) % numFrames;
+        
+        ctx.save();
+        
+        // Random offsets to prevent any repeat pattern discovery across frames
+        const xOffset = Math.floor(Math.random() * patternSize);
+        const yOffset = Math.floor(Math.random() * patternSize);
+        
+        const patternCanvas = frameCanvases[currentFrameIdx];
+        const pattern = ctx.createPattern(patternCanvas, 'repeat');
+        
+        if (pattern) {
+          // Set transform on pattern if supported, otherwise fallback to canvas translate
+          if ('setTransform' in pattern && typeof (pattern as any).setTransform === 'function') {
+            const matrix = new DOMMatrix().translate(xOffset, yOffset);
+            (pattern as any).setTransform(matrix);
+            ctx.fillStyle = pattern;
+            ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+          } else {
+            ctx.translate(xOffset, yOffset);
+            ctx.fillStyle = pattern;
+            ctx.fillRect(-xOffset, -yOffset, window.innerWidth + xOffset, window.innerHeight + yOffset);
+          }
+        }
+        
+        ctx.restore();
+        lastTime = time;
+      }
+      
+      animationId = requestAnimationFrame(render);
+    };
+
+    window.addEventListener('resize', resize);
+    resize();
+    currentFrameIdx = Math.floor(Math.random() * numFrames);
+    animationId = requestAnimationFrame(render);
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animationId);
+    };
+  }, [isDark]);
+
   return (
-    <div className="absolute inset-0 overflow-hidden bg-[#909090] pointer-events-none z-0">
-      {/* Self-contained CSS for high-performance organic aurora motion */}
-      <style>{`
-        @keyframes aurora-wave-a {
-          0% { transform: translate(-30%, -40%) rotate(0deg) scale(1); }
-          33% { transform: translate(10%, -20%) rotate(40deg) scale(1.15); }
-          66% { transform: translate(-10%, 20%) rotate(80deg) scale(0.9); }
-          100% { transform: translate(-30%, -40%) rotate(360deg) scale(1); }
-        }
-        @keyframes aurora-wave-b {
-          0% { transform: translate(25%, 30%) rotate(0deg) scale(1.1); }
-          50% { transform: translate(-15%, -10%) rotate(-90deg) scale(0.85); }
-          100% { transform: translate(25%, 30%) rotate(-360deg) scale(1.1); }
-        }
-        @keyframes aurora-wave-c {
-          0% { transform: translate(-20%, 20%) rotate(30deg) scale(0.9); }
-          50% { transform: translate(30%, -30%) rotate(160deg) scale(1.3); }
-          100% { transform: translate(-20%, 20%) rotate(390deg) scale(0.9); }
-        }
-        @keyframes aurora-wave-d {
-          0% { transform: translate(10%, -35%) rotate(-20deg) scale(1); }
-          50% { transform: translate(-25%, 25%) rotate(45deg) scale(1.2); }
-          100% { transform: translate(10%, -35%) rotate(-20deg) scale(1); }
-        }
-        @keyframes aurora-curtain-morph {
-          0%, 100% { border-radius: 43% 57% 41% 59% / 54% 39% 61% 46%; }
-          33% { border-radius: 60% 40% 50% 50% / 37% 63% 37% 63%; }
-          66% { border-radius: 40% 60% 64% 36% / 60% 40% 60% 40%; }
-        }
-        .aurora-blur {
-          filter: blur(120px);
-          -webkit-filter: blur(120px);
-          will-change: transform, opacity;
-          mix-blend-mode: screen;
-        }
-        :global(.light) .aurora-blur {
-          mix-blend-mode: multiply;
-          opacity: 0.25 !important;
-        }
-      `}</style>
-
-      {/* Aurora Layer 1: Dark Slate & Charcoal Core */}
-      <div 
-        className="absolute top-1/4 left-1/4 w-[120%] h-[120%] opacity-50 bg-gradient-to-r from-slate-600 via-charcoal-700 to-zinc-600 blur-[130px] rounded-[50%]"
-      />
-
-      {/* Aurora Layer 2: Deep Luxury Forest Teal */}
-      <div 
-        className="absolute -top-[20%] -left-[20%] w-[130%] h-[130%] opacity-[0.38] bg-gradient-to-tr from-[#025043] via-[#013b31] to-transparent aurora-blur"
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full object-cover"
         style={{
-          borderRadius: '43% 57% 41% 59% / 54% 39% 61% 46%'
+          imageRendering: 'pixelated',
+          opacity: 1,
         }}
       />
-
-      {/* Aurora Layer 3: Radiant High-Aspect Mint Teal */}
+      {/* Exquisite dark vignette shadows to ground pages in exclusive fashion gallery space */}
       <div 
-        className="absolute -bottom-[10%] -right-[10%] w-[120%] h-[120%] opacity-[0.45] bg-gradient-to-bl from-[#4a9c8f] via-[#00a896] to-transparent aurora-blur"
-        style={{
-          borderRadius: '50% 50% 45% 55% / 40% 60% 40% 60%'
-        }}
-      />
-
-      {/* Aurora Layer 4: Smoky Warm Grey Highlight */}
-      <div 
-        className="absolute top-1/3 left-1/3 w-[100%] h-[100%] opacity-[0.32] bg-gradient-to-br from-[#7a8b8c] via-[#5c6f6c] to-transparent aurora-blur"
-        style={{
-          borderRadius: '35% 65% 55% 45% / 50% 50% 50% 50%'
-        }}
-      />
-
-      {/* Aurora Layer 5: Concentrated Intense Emerald/Neon Stripe */}
-      <div 
-        className="absolute top-1/4 left-1/10 w-[110%] h-[80%] opacity-[0.25] bg-[#028090] aurora-blur"
-        style={{
-          borderRadius: '60% 40% 70% 30% / 50% 60% 40% 50%'
-        }}
-      />
-
-      {/* High-Fidelity Static Noise Grain overlay - 100% self-contained data URL */}
-      <div 
-        className="absolute inset-0 opacity-[0.045] pointer-events-none mix-blend-overlay"
-        style={{
-          backgroundImage: `url('data:image/svg+xml,%3Csvg viewBox="0 0 250 250" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E')`
-        }}
+        className={`absolute inset-0 pointer-events-none transition-all duration-1000 ${
+          isDark 
+            ? 'bg-[radial-gradient(circle_at_center,transparent_45%,rgba(12,13,13,0.75)_100%)]' 
+            : 'bg-[radial-gradient(circle_at_center,transparent_60%,rgba(44,107,100,0.06)_100%)]'
+        }`}
       />
     </div>
   );

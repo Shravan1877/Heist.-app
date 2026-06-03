@@ -266,7 +266,7 @@ export default function App() {
                 transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
                 className="px-12 md:px-24 py-32 flex flex-col items-center justify-center min-h-[calc(100vh-160px)] text-center relative gpu-accelerated"
               >
-                <LushGradientBackground />
+                <LushGradientBackground theme={theme} />
                 <div className="max-w-5xl w-full flex flex-col items-center relative z-10">
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
@@ -284,7 +284,10 @@ export default function App() {
                       initial={{ y: "110%" }}
                       animate={{ y: 0 }}
                       transition={{ duration: 1.2, ease: [0.4, 0, 0.2, 1], delay: 0.4 }}
-                      className="text-7xl sm:text-9xl md:text-[220px] font-serif font-black leading-[0.75] tracking-[-0.07em] uppercase break-words px-4 text-stroke-thin"
+                      className={cn(
+                        "text-7xl sm:text-9xl md:text-[220px] font-serif font-black leading-[0.75] tracking-[-0.07em] uppercase break-words px-4 text-stroke-thin",
+                        theme === "light" ? "text-[var(--color-accent)]" : "text-[var(--color-text-primary)]"
+                      )}
                     >
                       HEIST.
                     </motion.h1>
@@ -305,11 +308,16 @@ export default function App() {
                     {!session ? (
                       <div className="flex flex-col sm:flex-row gap-4 md:gap-6 w-full">
                         <motion.button
-                          whileHover={{ scale: 1.05, backgroundColor: "var(--color-bg)", color: "var(--color-accent)" }}
+                          whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={startDiagnostic}
                           id="begin-diagnostic"
-                          className="flex-1 glass-neon text-basalt py-10 flex items-center justify-center gap-4 group transition-all duration-700 relative overflow-hidden shadow-[0_0_80px_rgba(2,80,67,0.3)] border-2 border-neon pulse-glow"
+                          className={cn(
+                            "flex-1 py-10 flex items-center justify-center gap-4 group transition-all duration-700 relative overflow-hidden border-2 pulse-glow",
+                            theme === "light"
+                              ? "bg-[var(--color-accent)] text-[var(--color-bg)] border-[var(--color-accent)] shadow-[0_0_80px_rgba(44,107,100,0.2)]"
+                              : "glass-neon text-[#2c6b64] border-neon shadow-[0_0_80px_rgba(2,80,67,0.3)]"
+                          )}
                         >
                           <Sparkles className="w-6 h-6" />
                           <span className="text-sm tracking-[0.5em] font-black uppercase">Start Style DNA Quiz</span>
@@ -319,7 +327,12 @@ export default function App() {
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={handleLogin}
-                          className="flex-1 glass text-neon py-10 flex items-center justify-center gap-4 group hover:bg-neon/10 transition-all duration-300 border-2 border-neon/40 backdrop-blur-md"
+                          className={cn(
+                            "flex-1 py-10 flex items-center justify-center gap-4 group transition-all duration-300 border-2 backdrop-blur-md",
+                            theme === "light"
+                              ? "bg-[var(--color-bg-card)] text-[var(--color-accent)] border-[var(--color-border)] hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/5"
+                              : "glass text-neon border-neon/40 hover:bg-neon/10"
+                          )}
                         >
                           <LogIn className="w-6 h-6" />
                           <span className="text-sm tracking-[0.5em] font-black uppercase">Sign In</span>
@@ -331,16 +344,26 @@ export default function App() {
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleSavedSignIn("vision")}
-                          className="w-full glass-neon text-basalt py-10 flex items-center justify-center gap-4 group transition-all duration-300 shadow-[0_0_80px_rgba(2,80,67,0.5)] border-2 border-neon"
+                          className={cn(
+                            "w-full py-10 flex items-center justify-center gap-4 group transition-all duration-300 border-2",
+                            theme === "light"
+                              ? "bg-[var(--color-accent)]/10 border-[var(--color-accent)] shadow-[0_0_30px_rgba(44,107,100,0.1)]"
+                              : "glass-neon border-neon shadow-[0_0_80px_rgba(2,80,67,0.5)]"
+                          )}
                         >
-                          <Camera className="w-7 h-7" />
-                          <span className="text-sm tracking-[0.6em] font-black uppercase">Open Vision Engine</span>
+                          <Camera className="w-7 h-7 text-[#2c6b64]" />
+                          <span className="text-sm tracking-[0.6em] font-black uppercase text-[#2c6b64]">Open Vision Engine</span>
                         </motion.button>
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleSavedSignIn("recommendations")}
-                          className="w-full glass text-neon/60 py-6 flex items-center justify-center gap-4 border border-neon/20 hover:border-neon hover:text-neon transition-all"
+                          className={cn(
+                            "w-full py-6 flex items-center justify-center gap-4 border transition-all",
+                            theme === "light"
+                              ? "bg-[var(--color-bg-card)] text-[var(--color-accent)]/80 hover:text-[var(--color-accent)] border-[var(--color-border)] hover:border-[var(--color-accent)]"
+                              : "glass text-neon/60 border-neon/20 hover:border-neon hover:text-neon"
+                          )}
                         >
                           <Archive className="w-5 h-5" />
                           <span className="text-xs tracking-[0.4em] font-black uppercase">Archive Storage</span>
@@ -579,6 +602,7 @@ export default function App() {
                   initialTab={vaultTab}
                   onSignOut={handleSignOut} 
                   onRetakeQuiz={() => setView("diagnostic")}
+                  theme={theme}
                 />
               </motion.div>
             )}
@@ -605,12 +629,19 @@ export default function App() {
         
         {view !== "legal" && (
           <nav className="fixed bottom-4 md:bottom-8 left-0 right-0 md:left-1/2 md:-translate-x-1/2 z-[100] flex items-center justify-center pointer-events-none">
-            <div className="flex items-center gap-2 md:gap-4 p-2 md:p-3 glass pointer-events-auto mx-4 border-neon/10">
+            <div className={cn(
+              "flex items-center gap-2 md:gap-4 p-2 md:p-3 pointer-events-auto mx-4 border transition-all duration-500",
+              theme === "light"
+                ? "bg-[var(--color-bg-card)] border-[var(--color-border)] shadow-md"
+                : "glass border-neon/10"
+            )}>
               <button 
                 onClick={() => setView("vault")}
                 className={cn(
-                  "flex-1 md:px-12 py-4 px-6 border border-white/5 flex flex-col items-center gap-1 transition-all",
-                  view === "vault" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
+                  "flex-1 md:px-12 py-4 px-6 border flex flex-col items-center gap-1 transition-all",
+                  theme === "light"
+                    ? (view === "vault" ? "bg-[var(--color-accent)]/10 border-[var(--color-accent)] text-[var(--color-accent)]" : "border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]")
+                    : (view === "vault" ? "bg-neon/10 border-neon text-neon" : "border-white/5 text-limestone hover:text-white")
                 )}
               >
                 <Archive className="w-5 h-5" />
@@ -620,8 +651,10 @@ export default function App() {
               <button 
                 onClick={() => setView("home")}
                 className={cn(
-                  "flex-1 md:px-12 py-4 px-6 border border-limestone/20 flex flex-col items-center gap-1 transition-all",
-                  view === "home" ? "bg-neon/10 border-neon text-neon" : "text-limestone hover:border-limestone/60 hover:text-white"
+                  "flex-1 md:px-12 py-4 px-6 border flex flex-col items-center gap-1 transition-all",
+                  theme === "light"
+                    ? (view === "home" ? "bg-[var(--color-accent)]/10 border-[var(--color-accent)] text-[var(--color-accent)]" : "border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]")
+                    : (view === "home" ? "bg-neon/10 border-neon text-neon" : "border-limestone/20 text-limestone hover:text-white")
                 )}
               >
                 <ShieldCheck className="w-5 h-5" />
@@ -633,34 +666,7 @@ export default function App() {
 
         {/* Footnote */}
         {view !== "legal" && (
-          <footer className="py-24 flex flex-col items-center border-t border-neon/10 bg-basalt gap-8">
-            {/* Coming Soon Section */}
-            <div className="w-full max-w-3xl px-6 flex flex-col items-center gap-4 mb-6">
-              <span className="text-[10px] uppercase font-black tracking-[0.6em] text-neon animate-pulse">
-                coming soon
-              </span>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                <button
-                  type="button"
-                  onClick={() => setComingSoonAlert("Tokyo-your everyday stylist ai and hype bro")}
-                  className="flex flex-col justify-center items-center text-center p-8 bg-neon border border-neon/40 hover:brightness-110 hover:shadow-[0_0_25px_rgba(2,80,67,0.4)] transition-all cursor-pointer min-h-[120px]"
-                >
-                  <span className="text-xs font-mono text-white leading-relaxed tracking-wider font-bold">
-                    Tokyo-your everyday stylist ai and hype bro
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setComingSoonAlert("The Fashion Thesis - Understand your fashion style and vibe deeply")}
-                  className="flex flex-col justify-center items-center text-center p-8 bg-neon border border-neon/40 hover:brightness-110 hover:shadow-[0_0_25px_rgba(2,80,67,0.4)] transition-all cursor-pointer min-h-[120px]"
-                >
-                  <span className="text-xs font-mono text-white leading-relaxed tracking-wider font-bold">
-                    The Fashion Thesis - Understand your fashion style and vibe deeply
-                  </span>
-                </button>
-              </div>
-            </div>
-
+          <footer className="py-24 flex flex-col items-center border-t border-[var(--color-border)] bg-[var(--color-bg-deep)] gap-10 transition-all duration-500">
             <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3 px-6">
               <button 
                 onClick={() => {
@@ -668,61 +674,61 @@ export default function App() {
                   setView("legal");
                   window.history.pushState(null, "", "/legal");
                 }}
-                className="text-[9px] uppercase font-black tracking-[0.3em] text-[#e0e0e0]/40 hover:text-neon transition-colors cursor-pointer"
+                className="text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer font-sans"
               >
                 Refund Policy
               </button>
-              <span className="text-[#e0e0e0]/10 text-xs hidden sm:inline">|</span>
+              <span className="text-[var(--color-border)] text-xs hidden sm:inline">|</span>
               <button 
                 onClick={() => {
                   setLegalSection("privacy");
                   setView("legal");
                   window.history.pushState(null, "", "/legal");
                 }}
-                className="text-[9px] uppercase font-black tracking-[0.3em] text-[#e0e0e0]/40 hover:text-neon transition-colors cursor-pointer"
+                className="text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer font-sans"
               >
                 Privacy Policy
               </button>
-              <span className="text-[#e0e0e0]/10 text-xs hidden sm:inline">|</span>
+              <span className="text-[var(--color-border)] text-xs hidden sm:inline">|</span>
               <button 
                 onClick={() => {
                   setLegalSection("terms");
                   setView("legal");
                   window.history.pushState(null, "", "/legal");
                 }}
-                className="text-[9px] uppercase font-black tracking-[0.3em] text-[#e0e0e0]/40 hover:text-neon transition-colors cursor-pointer"
+                className="text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors cursor-pointer font-sans"
               >
                 Terms of Service
               </button>
             </div>
             
-            <p className="text-[10px] uppercase font-black tracking-[0.6em] text-neon/20">
-              HEIST. GLOBAL NETWORK v1.0.4
+            <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--color-text-secondary)]">
+              Monarchy • Curator Platform (v1.2.0)
             </p>
           </footer>
         )}
       </div>
 
       {comingSoonAlert && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-basalt/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-[var(--color-bg-deep)]/90 backdrop-blur-md">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-md glass-neon p-8 text-center space-y-6 shadow-[0_0_50px_rgba(2,80,67,0.3)] border border-neon/40"
+            className="w-full max-w-md p-8 text-center space-y-6 border border-[var(--color-border)] bg-[var(--color-bg-card)]"
           >
-            <div className="text-neon uppercase tracking-[0.6em] text-[10px] font-black animate-pulse">
-              SYSTEM TRANSMISSION
+            <div className="text-[var(--color-accent)] uppercase tracking-[0.3em] text-[10px] font-medium">
+              Curator Advisory
             </div>
-            <h3 className="text-obsidian text-3xl font-serif font-black uppercase tracking-tight text-stroke-sm">
-              coming soon
+            <h3 className="text-[var(--color-text-primary)] text-2xl font-serif font-light uppercase tracking-wide">
+              Coming Soon
             </h3>
-            <p className="text-limestone text-xs font-mono uppercase tracking-widest leading-relaxed">
+            <p className="text-[var(--color-text-secondary)] text-xs uppercase tracking-widest leading-relaxed">
               "{comingSoonAlert}"
-              <span className="block mt-4 text-[10px] text-neon/60 font-mono">NODE CURRENTLY OFFLINE</span>
+              <span className="block mt-4 text-[10px] text-[var(--color-accent)] font-sans tracking-[0.15em]">MODULE UNDER CALIBRATION</span>
             </p>
             <button 
               onClick={() => setComingSoonAlert(null)}
-              className="w-full py-4 bg-neon text-basalt text-xs font-black uppercase tracking-[0.4em] hover:bg-white hover:text-basalt transition-all cursor-pointer"
+              className="w-full py-4 text-xs font-medium uppercase tracking-[0.3em] transition-all cursor-pointer border border-[var(--color-border)] bg-[var(--color-accent)] text-[var(--color-bg)] hover:bg-[var(--color-accent-hover)]"
             >
               Acknowledge
             </button>

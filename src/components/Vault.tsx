@@ -30,6 +30,7 @@ interface VaultProps {
   initialTab?: VaultTab;
   onSignOut?: () => void;
   onRetakeQuiz?: () => void;
+  theme?: "light" | "dark";
 }
 
 type VaultTab = "recommendations" | "vision" | "batch";
@@ -45,7 +46,7 @@ interface BatchedOutfit {
   matches: VaultItem[];
 }
 
-export default function Vault({ userVector, initialTab, onSignOut, onRetakeQuiz }: VaultProps) {
+export default function Vault({ userVector, initialTab, onSignOut, onRetakeQuiz, theme = "dark" }: VaultProps) {
   const [activeTab, setActiveTab] = useState<VaultTab>(initialTab || "recommendations");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("recommended");
@@ -80,6 +81,7 @@ export default function Vault({ userVector, initialTab, onSignOut, onRetakeQuiz 
   const [isBatching, setIsBatching] = useState(false);
   const [batchedOutfit, setBatchedOutfit] = useState<BatchedOutfit | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeActionItemId, setActiveActionItemId] = useState<string | null>(null);
 
   // Credit & Auth State
   const [userProfile, setUserProfile] = useState<{ id: string, email: string, full_name: string, scan_credits: number, batch_credits: number } | null>(null);
@@ -507,9 +509,9 @@ Return ONLY the rows.`;
         </div>
 
         {/* Onboarding / Dashboard Guide */}
-        <div className="max-w-4xl mx-auto mb-12 p-6 glass rounded-none text-center">
-          <p className="text-[10px] md:text-xs text-neon uppercase tracking-[0.3em] font-black leading-loose">
-            Click any item to see your options: <span className="text-white glass px-2">Open Link</span> to buy, or <span className="text-white glass px-2">Curate an outfit</span> to see it styled.
+        <div className="max-w-4xl mx-auto mb-12 p-6 bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-none text-center">
+          <p className="text-[10px] md:text-xs text-[#2c6b64] uppercase tracking-[0.3em] font-black leading-loose">
+            Click any item to see your options: <span className="bg-[#2c6b64] text-[#e6e3dd] px-2.5 py-1 rounded-none mx-1 font-mono tracking-widest font-black inline-block md:inline-block">Open Link</span> to buy, or <span className="bg-[#2c6b64] text-[#e6e3dd] px-2.5 py-1 rounded-none mx-1 font-mono tracking-widest font-black inline-block md:inline-block">Curate an Outfit</span> to see it styled.
           </p>
         </div>
 
@@ -879,7 +881,8 @@ Return ONLY the rows.`;
                             ease: [0.4, 0, 0.2, 1] 
                           }}
                           whileHover={{ scale: 1.02 }}
-                          className="group flex flex-col cursor-pointer gpu-accelerated"
+                          onClick={() => setActiveActionItemId(item.id)}
+                          className="group flex flex-col cursor-pointer gpu-accelerated focus:outline-none"
                         >
                           <div className="w-full aspect-[3/4] flex-shrink-0 relative overflow-hidden mb-8 border border-taupe group-hover:border-neon shadow-[0_0_10px_rgba(211,211,211,0.2)] transition-all duration-700 rounded-none hover:shadow-[0_0_50px_rgba(2,80,67,0.15)]">
                             <motion.img 
@@ -893,22 +896,57 @@ Return ONLY the rows.`;
                               COORD_{Math.round((item.similarity || 0) * 100)}
                             </div>
                             
-                            {/* Hover Controls Overlay */}
-                            <div className="absolute inset-0 glass-neon opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center gap-4 rounded-none px-6">
+                            {/* Options/Actions Overlay */}
+                            <div className={cn(
+                              "absolute inset-0 glass-neon flex flex-col items-center justify-center gap-4 rounded-none px-6 transition-all duration-300 z-10",
+                              activeActionItemId === item.id 
+                                ? "opacity-100 pointer-events-auto bg-basalt/95" 
+                                : "opacity-0 pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto"
+                            )}>
+                              <p className="text-[10px] text-neon/80 uppercase tracking-[0.25em] font-black mb-1 animate-pulse">Select Protocol Action</p>
                               <a 
                                 href={item.product_link} 
                                 target="_blank" 
-                                onClick={() => trackInteraction(item.id, 'link_click')}
-                                className="w-full py-4 glass text-neon rounded-none flex items-center justify-center gap-2 hover:bg-white transition-all shadow-2xl text-[10px] font-black uppercase tracking-[0.3em]"
+                                rel="noopener noreferrer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  trackInteraction(item.id, 'link_click');
+                                  setActiveActionItemId(null);
+                                }}
+                                className="w-full py-4 bg-neon text-[#1c1e1d] rounded-none flex items-center justify-center gap-2 hover:bg-white transition-all shadow-2xl text-[10px] font-black uppercase tracking-[0.3em]"
                               >
                                 Open Link
                               </a>
                               <button 
-                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); trackInteraction(item.id, 'batch_click'); handleMatchAndBatch(item); }}
-                                className="w-full py-4 glass text-white rounded-none flex items-center justify-center gap-2 hover:bg-neon transition-all shadow-2xl text-[10px] font-black uppercase tracking-[0.3em]"
+                                onClick={(e) => { 
+                                  e.preventDefault(); 
+                                  e.stopPropagation(); 
+                                  trackInteraction(item.id, 'batch_click'); 
+                                  handleMatchAndBatch(item); 
+                                  setActiveActionItemId(null);
+                                }}
+                                className={cn(
+                                  "w-full py-4 rounded-none flex items-center justify-center gap-2 transition-all shadow-2xl text-[10px] font-black uppercase tracking-[0.3em]",
+                                  theme === "light"
+                                    ? "bg-neon text-[#1c1e1d] hover:bg-white border-transparent"
+                                    : "bg-[var(--color-bg-card)] text-white border border-neon/40 hover:bg-neon hover:text-[#1c1e1d] hover:border-neon"
+                                )}
                               >
                                 Curate an outfit
                               </button>
+                              
+                              {activeActionItemId === item.id && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setActiveActionItemId(null);
+                                  }}
+                                  className="mt-2 text-[9px] font-mono uppercase tracking-widest text-neon/60 hover:text-white transition-colors"
+                                >
+                                  [ Cancel ]
+                                </button>
+                              )}
                             </div>
                           </div>
 
